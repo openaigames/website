@@ -1,0 +1,31 @@
+{
+  "generator": "OpenAIGames procedural hard-surface models",
+  "three": "0.186.0",
+  "models": {
+    "television": {
+      "bytes": 2830740,
+      "meshes": 33,
+      "triangles": 30390
+    },
+    "console": {
+      "bytes": 1423216,
+      "meshes": 15,
+      "triangles": 14682
+    },
+    "controller": {
+      "bytes": 773976,
+      "meshes": 20,
+      "triangles": 7978
+    },
+    "cartridge": {
+      "bytes": 1136484,
+      "meshes": 9,
+      "triangles": 11752
+    },
+    "manual": {
+      "bytes": 148072,
+      "meshes": 4,
+      "triangles": 1502
+    }
+  }
+}

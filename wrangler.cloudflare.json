@@ -1,0 +1,34 @@
+{
+  "name": "openaigames",
+  "account_id": "798cc288096e1beac5cb1611654fdf4a",
+  "main": "dist/server/index.js",
+  "compatibility_date": "2026-05-15",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*",
+      "/internal/*",
+      "/catalog.json"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "openaigames-board",
+      "database_id": "6f976c8d-3b2d-489a-8608-de0b01d2a495",
+      "migrations_dir": "drizzle"
+    },
+    {
+      "binding": "CATALOG",
+      "database_name": "openaigames-catalog",
+      "database_id": "cb9dae75-dcd8-4a62-910b-fb299387a06a",
+      "migrations_dir": "catalog-migrations"
+    }
+  ],
+  "vars": {
+    "CATALOG_MODE": "production"
+  }
+}
