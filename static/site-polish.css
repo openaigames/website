@@ -117,6 +117,11 @@ body>.room{display:none!important}
 .immersive #player{position:relative;flex:1;min-height:0;min-width:0;background:#050a13}
 .immersive #player iframe{display:block;position:absolute;inset:0;width:100%;height:100%;border:0}
 .immersive .game-toolbar{flex:none}
+.immersive #player.game-rotated iframe{inset:auto;left:50%;top:50%;width:var(--rotated-game-width);height:var(--rotated-game-height);transform:translate(-50%,-50%) rotate(90deg);transform-origin:center}
+.game-toolbar .game-rotation{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.game-rotation svg{width:18px;height:18px;flex:none}
+.game-toolbar .game-rotation[aria-pressed=true]{color:#ffb276}
+@media(max-width:600px){.game-rotation [data-rotation-label]{display:none}.immersive #screen .game-rotation{min-width:44px;flex-shrink:0}}
 .resource-content,.guide-content{max-width:840px;margin:0 auto;line-height:1.8}
 .resource-content h1,.guide-content h1{font-size:30px;margin-bottom:20px}
 .resource-content h2{font-size:22px;margin:22px 0 12px}
@@ -139,6 +144,7 @@ body>.room{display:none!important}
 #three-room:not(.immersive),#three-room:not(.immersive) #screen{touch-action:none}
 .touch-guide{display:none;position:absolute;z-index:12;bottom:max(22px,env(safe-area-inset-bottom));left:12px;right:12px;color:#c3d6f1;font:12px/1.6 "Avenir Next","PingFang SC",sans-serif;text-align:center;pointer-events:none}
 .touch-used .touch-guide,.immersive .touch-guide{display:none!important}
+.cabinet-dragging #three-canvas canvas{cursor:grabbing!important}
 @media(pointer:coarse),(max-width:600px){
  .touch-guide{display:block}
  .site-utilities button,.room-panel-bar button,.room-panel-bar .panel-close,.room-panel-bar .panel-back,.dialog-close,.dialog-language{min-height:44px;min-width:44px}
@@ -147,7 +153,7 @@ body>.room{display:none!important}
  .room-panel .catalog-tools input{min-height:46px}
  .room-panel .panel-tabs{gap:0}
  .room-panel .panel-tabs button{padding:8px;font-size:12px}
- .immersive #screen .game-toolbar :is(button,a){min-height:44px}
+ .immersive #screen .game-toolbar :is(button,a){min-height:44px;min-width:44px}
  .immersive #screen .game-toolbar{gap:6px;flex-wrap:wrap}
  .immersive .exit-immersive{top:max(10px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));min-height:44px}
  .immersive #screen .playing{padding-top:calc(58px + env(safe-area-inset-top));padding-bottom:env(safe-area-inset-bottom)}

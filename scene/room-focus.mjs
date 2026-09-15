@@ -33,6 +33,18 @@ export function cabinetDetailForRay(ray){
   return nearest;
 }
 
+// Shift only the close-up endpoint so zooming out still returns through the
+// original cabinet overview. Dragging follows the row, not the room's orbit.
+export function panCabinetPath(path,progress,detail,dx,height,fov){
+  const pose=cameraPose(path,progress),origin=cameraPose(path,0),destination=cameraPose(path,1);
+  const span=2*pose.position.distanceTo(pose.target)*Math.tan(fov*Math.PI/360);
+  const next=detail.clone();
+  next.x=Math.max(-7.5,Math.min(7.5,detail.x-dx/Math.max(1,height)*span/Math.max(.1,progress)));
+  const shift=next.x-detail.x;
+  destination.target.x+=shift;destination.position.x+=shift;
+  return {detail:next,path:cameraPath(origin.position,origin.target,destination.position,destination.target)};
+}
+
 // Preserve the room's horizontal framing in portrait without backing through a wall.
 export function roomFov(aspect){return 2*Math.atan(Math.tan(19*Math.PI/180)*Math.max(1,.95/aspect))*180/Math.PI;}
 

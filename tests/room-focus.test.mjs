@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PerspectiveCamera,Ray,Vector3} from 'three';
-import {focusAreaForRay,focusDestination,cabinetDetailForRay,canScrollList,wheelGoal,resizeFocusPath,roomFov} from '../scene/room-focus.mjs';
+import {focusAreaForRay,focusDestination,cabinetDetailForRay,panCabinetPath,canScrollList,wheelGoal,resizeFocusPath,roomFov} from '../scene/room-focus.mjs';
 import {ROOM,CAMERA_CLEARANCE,cameraPath,cameraPose,overviewPath,containCamera} from '../scene/camera-motion.mjs';
 
 test('pointer rays distinguish the screen, cabinet, desktop and left wall',()=>{
@@ -101,5 +101,24 @@ test('phone portrait framing includes both cabinet edges and fits the focused sc
   const screen=new Vector3(-.2,4.21,-1.446),near=focusDestination('screen',aspect,screen,null,camera.fov);
   camera.position.copy(near.position);camera.lookAt(near.target);camera.updateMatrixWorld();
   for(const x of [-2.48,2.48])assert.ok(Math.abs(screen.clone().add(new Vector3(x,0,0)).project(camera).x)<.91);
+ }
+});
+
+test('close-up shelf drags reach both ends without orbiting, escaping the room or changing the return point',()=>{
+ for(const aspect of [.46,1.06,1.78])for(const progress of [.2,.7,1]){
+  const fov=roomFov(aspect),screen=new Vector3(-.2,4.21,-1.446),overview=focusDestination('cabinet',aspect,screen,null,fov);
+  let detail=new Vector3(0,8,-3.2),near=focusDestination('cabinet',aspect,screen,detail,fov);
+  let path=cameraPath(overview.position,overview.target,near.position,near.target);
+  const offset=cameraPose(path,progress).position.clone().sub(cameraPose(path,progress).target);
+  for(const dx of [9000,-9000,500,-500]){
+   ({path,detail}=panCabinetPath(path,progress,detail,dx,844,fov));
+   assert.ok(detail.x>=-7.5&&detail.x<=7.5);
+   if(dx===9000)assert.equal(detail.x,-7.5);
+   if(dx===-9000)assert.equal(detail.x,7.5);
+   const pose=cameraPose(path,progress);
+   assert.ok(pose.position.clone().sub(pose.target).distanceTo(offset)<1e-7,'shelf drag must preserve angle and distance');
+   assert.ok(cameraPose(path,0).position.distanceTo(overview.position)<1e-7,'zoom out must retain the original overview');
+   for(let p=0;p<=1;p+=.1){const {position}=cameraPose(path,p);assert.ok(position.x>ROOM.left+CAMERA_CLEARANCE-.001&&position.x<ROOM.right-CAMERA_CLEARANCE+.001);}
+  }
  }
 });

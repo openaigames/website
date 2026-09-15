@@ -7,13 +7,14 @@ import { cable } from './models.mjs';
 import { nightRoom } from './night-room.mjs';
 import { cabinetLayout } from '../lib/cabinet-layout.mjs';
 import { containCamera, cameraPath, cameraPose, overviewPath, syncOrbitPose } from './camera-motion.mjs';
-import { focusAreaForRay, focusDestination, cabinetDetailForRay, canScrollList, wheelGoal, resizeFocusPath, roomFov } from './room-focus.mjs';
+import { focusAreaForRay, focusDestination, cabinetDetailForRay, panCabinetPath, canScrollList, wheelGoal, resizeFocusPath, roomFov } from './room-focus.mjs';
 import { bindRoomTouch } from './touch-navigation.mjs';
+import { bindCabinetDrag } from './cabinet-navigation.mjs';
 const root=document.createElement('section');root.id='three-room';root.setAttribute('aria-label','OpenAIGames 三维游戏空间');
 root.innerHTML=`<div id="three-canvas"></div><div id="three-html"></div><div class="three-loading" role="status"><strong>OpenAIGames</strong><span>正在搬来你的游戏机…</span><i></i></div><div class="scene-tip" id="scene-tip">拖动，转一转。点一张卡带，开始玩。</div><div class="three-footer"><button data-action="submit-demo">＋ 投稿游戏</button><button id="scene-library">选卡</button><a href="https://github.com/openaigames/community" target="_blank" rel="noopener">逛社区 ↗</a><button data-action="sound" aria-label="开关按键音">音效</button></div><button id="exit-immersive" class="exit-immersive">↙ 回到游戏机</button><div class="three-controls" id="three-controls"><button data-action="eject">退卡</button><button data-action="start">START</button><button data-action="edit">一起改</button><button data-action="feedback">反馈</button></div>`;
 let roomLayout,cabinetPage=0,approachPath=null,approachProgress=0,approachGoal=0;
 let approachArea='screen',approachDetail=null,wheelPointer=null,approachHistory=[];
-let touchNavigation;
+let touchNavigation,cabinetNavigation,touchCabinetPan=false,lastZoomAt=0,cabinetDetailReady=false;
 let renderer,cssRenderer,scene,camera,orbit,screenObject,tv,consoleMesh,pad,rackCards=[],liveCart,manual;
 let dirty=true,focus=false,tween=null,drag=null,down=null,hover=null,held=null,latest=null,booted=false,disposed=false,inserting=false,insertGeneration=0,hoverCard=null,immersive=false,fullPending=false,fullRect=null,fullscreenAnimation=null,cardSource=null,cardArt=null,rackKey="",fullOriginalTransform="",inspection=null,inspectionId=null,inspectionProgress=0;
 const loader=new GLTFLoader(),texLoader=new T.TextureLoader(),raycaster=new T.Raycaster(),pointer=new T.Vector2();
@@ -88,7 +89,7 @@ function hitCard(mesh){for(let o=mesh;o;o=o.parent)if(o.userData.project)return 
 function clearInspection(){root.classList.remove('inspecting');if(!inspection)return;scene.remove(inspection);inspection.traverse(o=>{if(o.isMesh)o.material.dispose();});inspection=null;inspectionId=null;inspectionProgress=0;}
 function setCardHover(card){
  if(hoverCard===card)return;hoverCard=card;
- if(card&&!inserting&&!focus){
+ if(card&&!inserting&&!focus&&!isCabinetCloseup()){
   clearInspection();inspection=card.clone(true);inspectionId=card.userData.project.id;inspectionProgress=0;
   inspection.traverse(o=>{if(o.isMesh){o.userData={card:inspectionId,inspection:true};o.material=o.material.clone();o.material.transparent=true;o.material.opacity=0;o.castShadow=false;o.receiveShadow=false;}});scene.add(inspection);root.classList.add('inspecting');
  }
@@ -140,7 +141,7 @@ function aboveCartridgeSlot(){const slot=cartridgeSlot();slot.y=3;return slot;}
 function locateCard(id){return rackCards.find(c=>c.userData.project.id===id);}
 function hint(text){$('#scene-tip').textContent=text;}
 function readSize(){
- touchNavigation?.reset();
+ touchNavigation?.reset();cabinetNavigation?.reset();
  const width=innerWidth,height=innerHeight;renderer.setSize(width,height);cssRenderer.setSize(width,height);camera.aspect=width/height;camera.fov=roomFov(camera.aspect);camera.updateProjectionMatrix();if(!booted)return;
  homeCamera.set(12.5,11.4,27.3).sub(homeTarget).multiplyScalar(Math.max(1,1.45/camera.aspect)).add(homeTarget);containCamera(homeCamera,homeTarget);
  if(immersive){dirty=true;return;}
@@ -182,6 +183,10 @@ function cameraTo(mode,duration=1100){
 }
 function wheelApproach(event){
  if(!booted||disposed||immersive||inserting||drag||document.body.classList.contains('site-open')||$('#dialog').open||event.ctrlKey)return;
+ const horizontal=event.deltaX||(event.shiftKey?event.deltaY:0);
+ if(isCabinetCloseup()&&Math.abs(horizontal)>Math.abs(event.shiftKey?0:event.deltaY)){
+  event.preventDefault();beginCabinetPan();panCabinet(-horizontal*(event.deltaMode===1?16:event.deltaMode===2?innerWidth:1));return;
+ }
  const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?innerHeight:1);if(!delta)return;
  if(event.target.closest?.('input,textarea,select'))return;
  const list=event.target.closest?.('.game-list');if(list&&canScrollList(list,delta))return;
@@ -189,6 +194,7 @@ function wheelApproach(event){
  zoomRoom(delta,event);
 }
 function zoomRoom(delta,event){
+ const now=performance.now();if(now-lastZoomAt>220)cabinetDetailReady=approachArea==='cabinet'&&approachProgress>=.985;lastZoomAt=now;
  if(delta>0&&!approachPath){
   if(tween?.mode!=='overview')cameraTo('overview',200);
   return;
@@ -204,7 +210,7 @@ function zoomRoom(delta,event){
  }
  // Once the whole cabinet is in view, another inward gesture inspects the
  // pointed shelf. Keep this as a second reversible leg, with a bounded endpoint.
- if(delta<0&&approachArea==='cabinet'&&approachProgress>=.985&&!approachDetail){
+ if(delta<0&&cabinetDetailReady&&approachArea==='cabinet'&&approachProgress>=.985&&!approachDetail){
   getHit(event);
   const detail=focusAreaForRay(raycaster.ray)==='cabinet'?cabinetDetailForRay(raycaster.ray):null;
   if(detail)prepareApproach('cabinet',detail);
@@ -215,20 +221,32 @@ function zoomRoom(delta,event){
  startCameraTravel(approachPath,approachProgress,next,'approach',120);
 }
 
+function isCabinetCloseup(){return Boolean(approachPath&&approachArea==='cabinet'&&approachDetail&&approachProgress>.1&&!immersive&&!inserting);}
+function beginCabinetPan(){
+ tween=null;approachGoal=approachProgress;wheelPointer=null;setCardHover(null);clearInspection();syncOrbitPose(orbit);orbit.enabled=false;
+}
+function panCabinet(dx){
+ if(!isCabinetCloseup())return;
+ const next=panCabinetPath(approachPath,approachProgress,approachDetail,dx,innerHeight,camera.fov);
+ approachPath=next.path;approachDetail=next.detail;
+ const pose=cameraPose(approachPath,approachProgress);camera.position.copy(pose.position);orbit.target.copy(pose.target);camera.lookAt(orbit.target);dirty=true;
+}
 function enableTouchNavigation(){
  const guide=document.createElement('div');guide.className='touch-guide';guide.textContent='单指转动 · 双指缩放 · 点卡带开玩';root.append(guide);
  touchNavigation=bindRoomTouch(root,{
   canStart:event=>booted&&!disposed&&!immersive&&!inserting&&!document.body.classList.contains('site-open')&&!$('#dialog').open&&!event.target.closest?.('input,textarea,select'),
-  pinchStart:()=>{wheelPointer=null;setCardHover(null);syncOrbitPose(orbit);root.classList.add('touch-used');},
+  pinchStart:()=>{touchCabinetPan=false;lastZoomAt=0;wheelPointer=null;setCardHover(null);syncOrbitPose(orbit);root.classList.add('touch-used');},
   zoom:(delta,anchor)=>zoomRoom(delta,{clientX:anchor.x,clientY:anchor.y,target:root}),
   dragStart:point=>{
    root.classList.add('touch-used');
    if(point.target.closest?.('#screen'))return;
+   touchCabinetPan=isCabinetCloseup();if(touchCabinetPan){beginCabinetPan();return;}
    tween=null;approachPath=null;approachDetail=null;approachHistory=[];approachProgress=approachGoal=0;wheelPointer=null;
    root.dataset.focusArea='room';setScreenFocus(false);syncOrbitPose(orbit);orbit.enabled=false;
   },
   drag:({dx,dy,target})=>{
    if(target.closest?.('#screen')){const list=target.closest('.game-list');if(list)list.scrollTop-=dy;return;}
+   if(touchCabinetPan){panCabinet(dx);return;}
    orbit.rotateLeft(dx/innerHeight*Math.PI*1.4);orbit.rotateUp(dy/innerHeight*Math.PI*1.4);
    containCamera(camera.position,orbit.target);camera.lookAt(orbit.target);dirty=true;
   },
@@ -238,6 +256,11 @@ function enableTouchNavigation(){
    perform(getHit({clientX:point.x,clientY:point.y}));
    if(held){host()?.bridge('keyup',held);held=null;}
   },
+  end:()=>{touchCabinetPan=false;orbit.enabled=!immersive&&!focus&&!tween;}
+ });
+ cabinetNavigation=bindCabinetDrag(root,{
+  active:()=>booted&&!disposed&&isCabinetCloseup()&&!document.body.classList.contains('site-open')&&!$('#dialog').open,
+  begin:beginCabinetPan,pan:panCabinet,tap:event=>perform(getHit(event)),
   end:()=>{orbit.enabled=!immersive&&!focus&&!tween;}
  });
 }
@@ -323,7 +346,7 @@ async function init(){
  frame();
  };
 function fallback(message){
- disposed=true;touchNavigation?.dispose();renderer?.dispose();document.body.classList.remove('is-3d');
+ disposed=true;touchNavigation?.dispose();cabinetNavigation?.dispose();renderer?.dispose();document.body.classList.remove('is-3d');
  if(!root.isConnected)document.body.append(root);
  root.innerHTML=`<div class="scene-error" role="alert"><h1>房间暂时没有打开</h1><p>${message||'请检查连接后重试。'}</p><button type="button" id="retry-room">重新打开房间</button><button type="button" id="fallback-catalog">打开游戏目录</button></div>`;
  root.querySelector('#retry-room').onclick=()=>location.reload();root.querySelector('#fallback-catalog').onclick=()=>window.OpenAIGamesSite.open('games');
