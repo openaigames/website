@@ -50,17 +50,17 @@ test('PR snapshots update, pin revisions, reject stale runs, and publish separat
     const second={...first,revision:'b'.repeat(40),sequence:200,catalog:{projects:[]}};
     await publish(second); await publish({...first,sequence:150});
     assert.equal((await read('/api/catalog?pr=7')).data.release.revision,second.revision);
-    assert.equal((await read('/api/catalog?pr=7&revision='+first.revision)).data.projects.length,1);
+    assert.equal((await read('/api/catalog?pr=7&revision='+first.revision)).data.projects.length,seed.projects.length);
     assert.equal((await read('/api/catalog?pr=123')).status,404);
     assert.equal((await read('/api/catalog?pr=../x')).status,400);
     assert.equal((await mf.dispatchFetch('https://preview.example/api/board',{method:'POST'})).status,403);
     assert.equal((await prod.fetch('https://production.example/internal/catalog',{method:'POST'})).status,404);
     assert.equal((await prod.fetch('https://production.example/api/catalog?pr=7')).status,400);
     await publish({...first,channel:'production',sequence:300});
-    assert.equal((await (await prod.fetch('https://production.example/api/catalog')).json()).projects.length,1);
+    assert.equal((await (await prod.fetch('https://production.example/api/catalog')).json()).projects.length,seed.projects.length);
     await publish({...second,status:'invalid',sequence:400});
     assert.equal((await read('/api/catalog?pr=7')).status,422);
-    assert.equal((await (await prod.fetch('https://production.example/api/catalog')).json()).projects.length,1);
+    assert.equal((await (await prod.fetch('https://production.example/api/catalog')).json()).projects.length,seed.projects.length);
     await publish({...first,status:'closed',sequence:500});
     assert.equal((await read('/api/catalog?pr=7')).data.release.status,'closed');
   }finally{await mf.dispose();}

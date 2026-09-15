@@ -1,7 +1,7 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 const material=(color,roughness=.42,metalness=0)=>new T.MeshStandardMaterial({color,roughness,metalness});
-export const M={ivory:material('#e7dfc6',.32),red:material('#862535',.29),edge:material('#581b27',.45),black:material('#222825',.48),rubber:material('#161d19',.8),gold:material('#b8a06b',.36,.64),steel:material('#989889',.3,.7),tv:material('#b7b6a4',.48),tvDark:material('#75776b',.6),glass:new T.MeshPhysicalMaterial({color:'#101c1c',roughness:.16,metalness:.1,clearcoat:1,clearcoatRoughness:.14}),label:material('#e6d4a6',.7),paper:material('#ded1ac',.9)};
+export const M={ivory:material('#c5dcfa',.32),red:material('#ed783b',.29),edge:material('#102649',.45),black:material('#101d35',.48),rubber:material('#0b1326',.8),gold:material('#2d59b8',.36,.64),steel:material('#91b5dd',.3,.7),tv:material('#335cb7',.48),tvDark:material('#193265',.6),glass:new T.MeshPhysicalMaterial({color:'#071526',roughness:.16,metalness:.1,clearcoat:1,clearcoatRoughness:.14}),label:material('#cee6ff',.7),paper:material('#92b5db',.9)};
 function mesh(g,geo,mat,name,x=0,y=0,z=0){const m=new T.Mesh(geo,mat);m.name=name;m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
 function box(g,name,w,h,d,x,y,z,mat=M.ivory,r=.035){return mesh(g,new RoundedBoxGeometry(w,h,d,2,Math.min(r,w/3,h/3,d/3)),mat,name,x,y,z);}
 function cyl(g,name,r,h,x,y,z,mat=M.black,n=24){return mesh(g,new T.CylinderGeometry(r,r,h,n),mat,name,x,y,z);}

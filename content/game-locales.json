@@ -1,0 +1,136 @@
+{
+  "https://waterbird-i.github.io/the-binding-of-dodo/": {
+    "zh": {
+      "title": "The Binding of dodo",
+      "description": "带着眼泪闯进随机地牢，捡道具、打 Boss，看看这一次能走多远。",
+      "category": "肉鸽地牢",
+      "controls": "WASD 移动 · ↑ ↓ ← → 四向射击",
+      "instructions": "P 暂停 · E 炸弹 · 空格使用主动道具 · Tab 全图 · I 解锁图鉴。手机使用游戏内的虚拟摇杆与射击按钮。",
+      "feedback_questions": [
+        "第一层的引导清楚吗？",
+        "四向射击用起来顺手吗？",
+        "前几层的难度会让你想继续吗？"
+      ],
+      "credits": "作者 waterbird-i 负责需求、玩法设计与验收，代码由 AI 辅助完成。",
+      "attribution": "据作者说明，本作为《The Binding of Isaac》的致敬性同人作品，与原作者及发行商无关联；图形与音效均由程序生成。"
+    },
+    "en": {
+      "title": "The Binding of dodo",
+      "description": "Enter a random dungeon armed with tears. Collect items, fight bosses and see how far this run takes you.",
+      "category": "Dungeon roguelike",
+      "controls": "WASD to move · Arrow keys to shoot in four directions",
+      "instructions": "P to pause · E for bombs · Space to use your active item · Tab for the full map · I for the unlock collection. On mobile, use the in-game virtual sticks and fire buttons.",
+      "feedback_questions": [
+        "Is the first-floor introduction clear?",
+        "Does four-direction shooting feel comfortable?",
+        "Does the early difficulty make you want to keep playing?"
+      ],
+      "credits": "waterbird-i led the requirements, gameplay design and acceptance testing. The code was developed with AI assistance.",
+      "attribution": "The creator describes this as a fan-made tribute to The Binding of Isaac, with no affiliation to its creators or publisher. Graphics and sound effects are generated procedurally."
+    }
+  },
+  "https://ziang-chen.github.io/nightfury-racing/": {
+    "zh": {
+      "title": "NIGHTFURY · 极夜狂飙",
+      "description": "在霓虹都市、火山、冰原和浮岛间漂移竞速。八张赛道、两款跑车，与五位 AI 对手完成五圈比赛。",
+      "category": "街机赛车",
+      "controls": "W / S 加速刹车 · A / D 转向 · 空格漂移 · Shift 氮气",
+      "instructions": "桌面浏览器选择地图与车型，完成五圈比赛。C 切换镜头，R 回到路面，Esc 暂停。漂移和落地奖励可以补充氮气；设置中可选择流畅或精细画质。",
+      "credits": "Ziang-Chen 创作，使用 Codex 辅助开发。原创代码采用 MIT 许可。",
+      "attribution": "Aventador 模型：Arion Digital；Veyron 模型：DevPoly3D，CC BY 4.0。Three.js、meshoptimizer：MIT；Draco：Apache-2.0。完整来源及修改说明见游戏源码中的 THIRD_PARTY_NOTICES.md 与游戏内署名页。地图封面和海报为 ImageGen 概念艺术。",
+      "image_caption": "霓虹都市 · 作者提供的实机截图；卡带封面为概念海报",
+      "feedback_questions": [
+        "首次加载和选图、选车流程是否清楚？",
+        "转向、漂移和氮气的手感是否容易掌握？",
+        "回环与断桥飞跃失误后，能否顺利回到赛道？",
+        "五圈比赛与 AI 追击的难度是否合适？"
+      ]
+    },
+    "en": {
+      "title": "NIGHTFURY",
+      "description": "Drift through neon cities, volcanoes, ice fields and floating islands. Choose from eight tracks and two sports cars, then race five AI opponents over five laps.",
+      "category": "Arcade racing",
+      "controls": "W / S to accelerate and brake · A / D to steer · Space to drift · Shift for nitro",
+      "instructions": "Choose a track and car in a desktop browser and complete five laps. C changes the camera, R returns the car to the road and Esc pauses. Drifting and landing bonuses refill nitro. Choose performance or quality graphics in Settings.",
+      "credits": "Created by Ziang-Chen with development assistance from Codex. Original code is licensed under MIT.",
+      "attribution": "Aventador model: Arion Digital. Veyron model: DevPoly3D, CC BY 4.0. Three.js and meshoptimizer: MIT. Draco: Apache-2.0. See THIRD_PARTY_NOTICES.md in the game source and the in-game credits for full sources and modifications. Track covers and posters are ImageGen concept art.",
+      "image_caption": "Neon city · Gameplay screenshot supplied by the creator. The cartridge cover is a concept poster.",
+      "feedback_questions": [
+        "Are the first load, track selection and car selection clear?",
+        "Are steering, drifting and nitro easy to learn?",
+        "Can you recover smoothly after missing a loop or broken-bridge jump?",
+        "Are the five-lap race and AI opponents appropriately challenging?"
+      ]
+    }
+  },
+  "https://dirty-room.zackliny.chatgpt.site/": {
+    "zh": {
+      "title": "你脏了 · 微缩清剿（蟑螂大作战）",
+      "description": "在房间里以蟑螂般的大小生存，选择武器、叠加符文，寻找虫母。支持键盘和触屏摇杆，自动攻击。",
+      "development_stage": "可试玩 Demo",
+      "image_caption": "2026-09-15 实际打开游戏后截取的标题与试玩画面。"
+    },
+    "en": {
+      "title": "Dirty Room · Cockroach Skirmish",
+      "description": "Survive at cockroach size inside a room. Pick weapons, stack runes and hunt down the brood mother. Supports keyboard and touch-stick controls with automatic attacks.",
+      "development_stage": "Playable demo",
+      "image_caption": "Title screen and gameplay captured from the running game on September 15, 2026."
+    }
+  },
+  "https://snkrx-godot-preview.pages.dev/": {
+    "zh": {
+      "title": "SNKRX · Godot 非官方复刻试玩",
+      "description": "SNKRX 的 Godot 非官方复刻预览。页面提供新手快速试玩、普通开局与操作说明，完整还原尚未完成。原作与配乐署名见试玩页。",
+      "development_stage": "阶段试玩版",
+      "image_caption": "2026-09-15 实际试玩截图。非官方复刻，完整还原尚未完成。"
+    },
+    "en": {
+      "title": "SNKRX · Unofficial Godot Playtest",
+      "description": "An unofficial Godot recreation of SNKRX. The preview offers a quick tutorial run, a standard start and controls. The recreation is not yet complete. Original game and music credits are listed on the playtest page.",
+      "development_stage": "Preview build",
+      "image_caption": "Gameplay captured on September 15, 2026. This unofficial recreation is not yet complete."
+    }
+  },
+  "https://sunset-harbor-stories.nce16220811.chatgpt.site/": {
+    "zh": {
+      "title": "HARBOR STORIES · 日落边境 VI",
+      "description": "从港口行动开始，也可以自由探索城市，驾驶汽车、快艇和飞机。提供地面突击、空战和委托任务入口。",
+      "development_stage": "体验版 v6.3.1",
+      "image_caption": "2026-09-15 自由探索模式实机截图。"
+    },
+    "en": {
+      "title": "HARBOR STORIES · Sunset Frontier VI",
+      "description": "Start with a harbor mission, or explore the city freely by car, speedboat and aircraft. Includes ground assaults, air combat and contracts.",
+      "development_stage": "Trial v6.3.1",
+      "image_caption": "Free-roam gameplay captured on September 15, 2026."
+    }
+  },
+  "https://shenzh21.github.io/wind-book-journey-playtest/": {
+    "zh": {
+      "title": "风之书的旅途",
+      "description": "横版探索内测试玩。移动、二段跳、旋风转身，寻找散落的风之书，再回到图书馆阅读。",
+      "development_stage": "内测试玩",
+      "image_caption": "2026-09-15 实际打开游戏后截取的试玩画面。"
+    },
+    "en": {
+      "title": "Wind Book Journey",
+      "description": "A side-scrolling exploration playtest. Move, double-jump and spin through the world to find scattered wind books, then return to the library to read them.",
+      "development_stage": "Internal playtest",
+      "image_caption": "Gameplay captured from the running game on September 15, 2026."
+    }
+  },
+  "https://iron-swarm-combat.nick-gpt-9.chatgpt.site/": {
+    "zh": {
+      "title": "铁甲洪流 · 重启防线",
+      "description": "驾驶守备坦克，守住基地、重新连接失联的防线节点。提供单人行动与本地双人模式，移动时自动开火。",
+      "development_stage": "可试玩 Demo",
+      "image_caption": "2026-09-15 游戏标题封面与灰线哨站战役实机截图。"
+    },
+    "en": {
+      "title": "Iron Swarm · Defense Reboot",
+      "description": "Drive a defense tank, protect the base and reconnect lost defense nodes. Includes solo and local two-player modes, with automatic fire while moving.",
+      "development_stage": "Playable demo",
+      "image_caption": "Title screen and Greyline Outpost campaign gameplay captured on September 15, 2026."
+    }
+  }
+}

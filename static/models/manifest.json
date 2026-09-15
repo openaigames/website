@@ -3,27 +3,27 @@
   "three": "0.186.0",
   "models": {
     "television": {
-      "bytes": 2830740,
+      "bytes": 2830732,
       "meshes": 33,
       "triangles": 30390
     },
     "console": {
-      "bytes": 1423216,
+      "bytes": 1423200,
       "meshes": 15,
       "triangles": 14682
     },
     "controller": {
-      "bytes": 773976,
+      "bytes": 773964,
       "meshes": 20,
       "triangles": 7978
     },
     "cartridge": {
-      "bytes": 1136484,
+      "bytes": 1136472,
       "meshes": 9,
       "triangles": 11752
     },
     "manual": {
-      "bytes": 148072,
+      "bytes": 148060,
       "meshes": 4,
       "triangles": 1502
     }

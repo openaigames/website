@@ -29,6 +29,12 @@ export async function submissions(request, env, ctx) {
   const db = env.DB;
   if (!db) throw Error('Missing submissions database');
   if (request.method === 'GET') {
+    const id = url.searchParams.get('id');
+    if (id !== null) {
+      if (!/^[1-9]\d{0,14}$/.test(id)) return json({error:'查询条件无效。'},400);
+      const entry=await db.prepare(`SELECT ${columns} FROM game_submissions WHERE id = ? AND status = 'pending'`).bind(Number(id)).first();
+      return entry ? json({entry}) : json({error:'这款试玩暂时没有找到。'},404);
+    }
     const before = url.searchParams.get('before'), query = (url.searchParams.get('q') || '').trim();
     if ((before !== null && !/^[1-9]\d{0,14}$/.test(before)) || query.length > 100) return json({error:'查询条件无效。'},400);
     const result = await db.prepare(`SELECT ${columns} FROM game_submissions WHERE status = 'pending' AND id < ? AND instr(lower(title || ' ' || description), lower(?)) > 0 ORDER BY id DESC LIMIT 21`).bind(before ? Number(before) : Number.MAX_SAFE_INTEGER, query).all();

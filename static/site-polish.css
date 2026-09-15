@@ -1,0 +1,266 @@
+/* Shared navigation, legibility and bilingual layouts. */
+#site-header{gap:24px}#site-header nav{order:2;margin-left:auto;gap:20px}.site-utilities{order:3;display:flex;align-items:center;gap:9px;flex-shrink:0}
+.site-utilities button{font:600 12px/1.4 "Avenir Next","PingFang SC",sans-serif;min-height:38px;padding:9px 12px;border:1px solid #737c6845;background:#f5f3eadd;color:#46523a;border-radius:3px;cursor:pointer}
+.site-utilities button:hover{background:#e0e4d5}.site-language{min-width:45px}.site-open .site-view-toggle{display:none}
+.site-open #site-header{background:var(--site-paper)}.original-language-note{font-size:11px;line-height:1.8;color:#626d56}
+.site-page-footer{flex-wrap:wrap}.site-page-footer .original-language-note{flex-basis:100%;order:4}
+:is(a,button,input,textarea,select):focus-visible{outline:2px solid #2446ec;outline-offset:4px}button:disabled{cursor:wait}
+.site-lead,.intro-copy,.community-hero p,.participation-row p,.community-local p{font-size:15px;line-height:1.85}
+.participation-row p{color:#606e52}.site-kicker{color:#606953}.community-hero .site-kicker{color:#efdbc5}
+.site-row-link,.community-footnote,.community-local small{font-size:13px}.community-footnote{color:#647151}.catalog-caption{font-size:12px}.catalog-meta{color:#626d56}
+.site-content :is(h1,h2,h3){overflow-wrap:break-word}.site-button{white-space:normal;text-align:left}
+.title-notes dd,.title-notes p{overflow-wrap:anywhere}.site-page-footer>a:last-child{white-space:nowrap}
+html[lang=en] .site-brand small{letter-spacing:0;font-size:10px}html[lang=en] #site-intro h1{font-size:clamp(25px,3vw,41px);line-height:1.2;letter-spacing:-1.5px}
+html[lang=en] #site-intro .intro-copy{font-size:14px}html[lang=en] #site-intro .intro-note{font-size:10px;line-height:1.7}
+html[lang=en] .submission-heading h1{font-size:clamp(35px,4.8vw,59px)}html[lang=en] .submission-heading h1 span{margin:0 .25em 0 0}
+html[lang=en] .community-hero h1{font-size:clamp(35px,5vw,62px);max-width:660px;line-height:1.2}html[lang=en] .community-stamp{right:50px;top:105px;font-size:36px}
+html[lang=en] .board-heading h1{font-size:clamp(30px,3vw,40px);max-width:750px;line-height:1.3}html[lang=en] .board-kind span{font-size:13px}
+html[lang=en] .three-screen .menu-heading{font-size:26px}html[lang=en] .three-screen .screen-nav{gap:17px}html[lang=en] .three-screen .screen-nav button{font-size:13px}
+html[lang=en] .screen-nav button{white-space:nowrap}html[lang=en] .controller-help{font-size:11px;line-height:1.7}
+@media(max-width:1120px){#site-header{flex-wrap:wrap;padding:16px 26px 12px;gap:12px}.site-utilities{order:1;margin-left:auto}#site-header nav{order:2;flex-basis:100%;margin:0;justify-content:flex-start;gap:24px}#site-view{padding-top:130px}#site-intro{top:23%}.screen-view .three-header{top:137px}}
+@media(max-width:700px){#site-header{display:flex;padding:14px 20px 11px;gap:10px}.site-brand{font-size:21px}.site-brand small{display:none}.site-utilities{gap:6px}.site-utilities button{font-size:11px;padding:7px 9px;min-height:34px}.site-language{min-width:39px}#site-header nav{gap:20px;overflow-x:auto;flex-wrap:nowrap;width:100%;padding-bottom:3px;margin:0}#site-header nav a{font-size:13px;line-height:26px;min-height:34px;padding:4px 0}#site-header nav .site-submit{padding:4px 10px}#site-header nav .site-github{display:none}#site-view{padding-top:121px}#site-intro{top:149px;max-width:67%}.site-content{padding-top:32px}.site-lead,.intro-copy,.community-hero p,.participation-row p,.community-local p{font-size:15px}.community-stamp{display:none}.community-hero h1{font-size:38px}.community-local small,.community-footnote,.site-row-link{font-size:13px}.catalog-heading h1{font-size:36px}.site-page-footer{gap:16px}.site-page-footer p{font-size:11px}.site-page-footer>.original-language-note{margin-top:-4px}.catalog-caption{font-size:11px}.title-actions{gap:18px}.title-notes dl div{grid-template-columns:76px minmax(0,1fr)}html[lang=en] .catalog-heading h1{font-size:32px;max-width:240px}html[lang=en] .collection-number b{font-size:44px}html[lang=en] .collection-number span{font-size:10px;line-height:1.3}html[lang=en] .community-hero h1{font-size:38px}html[lang=en] .submission-heading h1{font-size:37px;letter-spacing:-1.5px}html[lang=en] .board-heading h1{font-size:30px}html[lang=en] .board-wall-top{flex-wrap:wrap}html[lang=en] #site-intro h1{font-size:27px}html[lang=en] #site-intro .intro-copy{display:none}.screen-view .three-header{top:135px}.site-open .site-view-toggle{display:none}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important}}
+/* The night studio owns navigation on the home screen. */
+:root{--site-paper:#f1f4f9;--site-ink:#142747;--site-red:#275cdf;--site-rule:#23426b2b}
+body.is-3d:not(.site-open) #site-header{color:#d6e8ff;padding:22px 30px;background:linear-gradient(#071126c9,transparent);border:0;flex-wrap:nowrap}
+body.is-3d:not(.site-open) #site-header nav,body.is-3d:not(.site-open) #site-intro,body.is-3d:not(.site-open) .site-brand small{display:none}
+body.is-3d:not(.site-open) .site-utilities{margin-left:auto}
+body.is-3d:not(.site-open) .site-utilities button{background:#0a1a36b8;color:#c4dcff;border-color:#71a3eb44;backdrop-filter:blur(8px)}
+#three-room{background:#050c1b;color:#cee3ff}.three-footer{display:none}.three-header{bottom:22px;right:26px;top:auto;left:auto}.screen-view .three-header{top:88px;bottom:auto}
+.view-keys{background:#0c1b36cf;border-color:#6495d536}.view-keys button{color:#9cb6dd}.view-keys button.active{background:#244a80;color:#e0efff;box-shadow:none}.view-keys button:hover{background:#1c365d}
+.scene-tip{bottom:25px;left:28px;transform:none;max-width:48%;text-align:left;color:#9ab6d9;background:transparent;font-size:12px}.screen-view .scene-tip{color:#9ab6d9;bottom:22px}
+.three-loading{background:#09172e}.three-loading span{color:#9eb9df}.three-loading i{background:#ff883e}
+.site-brand small,.site-kicker,.site-lead,.site-text-link,.catalog-meta,.catalog-game>p,.site-back,.title-description,.participation-row p,.community-footnote,.original-language-note{color:#536786}
+.site-utilities button{color:#24436f;background:#e7eef8;border-color:#afc0d8}.site-utilities button:hover{background:#dbe7f9}
+.community-hero{background:#174cba;color:#f0f6ff}.community-hero p,.community-hero .site-kicker{color:#d5e3fc}.community-stamp{color:#ff9b58;border-color:#ff9b5855}.site-button.primary:hover{background:#143f9f}.site-button{border-color:#778aa6}.site-button.light{background:#e7f0ff;color:#183e7f;border-color:#e7f0ff}.community-local{background:#e4ecf9}.community-local small{color:#607594}
+.title-cover-note{color:#587294}.site-cartridge{--case:#437cce!important;border-color:#284e88;border-bottom-color:#173e76}.cartridge-label{background:#e4edfa;border-color:#294c7b}.cartridge-imprint,.cartridge-caption{color:#244366}.cartridge-notch{background:#8fc6ff;border-color:#234b82}
+.title-card-placeholder{display:grid;place-content:center;padding:24px;text-align:center;aspect-ratio:1;background:#153a75;color:#d1e9ff;font-size:24px;overflow-wrap:anywhere}.title-card-placeholder small{font:11px monospace;margin-bottom:22px;color:#ffac73}.title-card-placeholder b{font-weight:550;line-height:1.5}
+@media(max-width:700px){body.is-3d:not(.site-open) #site-header{padding:17px 18px}.three-header{left:18px;right:18px;bottom:25px;justify-content:center;top:auto}.view-keys{width:max-content}.view-keys button{min-height:36px;padding:9px 13px}.scene-tip{left:50%;transform:translateX(-50%);bottom:79px;max-width:90%;text-align:center;font-size:11px;width:max-content}.screen-view .three-header{top:75px;bottom:auto}.screen-view .scene-tip{bottom:30px;max-width:87%}.site-utilities{order:3}}
+
+/* Keyboard users can reach the physical scene actions without floating callouts. */
+.room-accessible-actions{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;z-index:20}
+.room-accessible-actions:focus-within{width:auto;height:auto;clip-path:none;left:22px;bottom:80px;right:22px;display:flex;gap:10px;flex-wrap:wrap;padding:12px;background:#0d1d38f2;border:1px solid #5182b2;border-radius:6px}
+.room-accessible-actions button{background:#16355c;color:#d4e7ff;padding:10px 14px;font-size:12px;border:1px solid #5378a3;border-radius:3px}
+.room-accessible-actions button:disabled{opacity:.4;cursor:default}
+.screen-view .room-accessible-actions,.immersive .room-accessible-actions{display:none}
+
+/* The room is the application shell; all community surfaces open inside it. */
+body>.room{display:none!important}
+#site-intro{display:none!important}
+#site-header,body.is-3d #site-header,body.site-open #site-header{color:#d6e8ff;padding:22px 30px;background:linear-gradient(#071126c9,transparent);border:0;flex-wrap:nowrap}
+#site-header nav,.site-brand small{display:none!important}
+.site-brand .brand-ai{color:#ff903f;font-weight:750}.site-brand .brand-games{color:#d6e8ff;font-weight:500}
+.site-utilities{margin-left:auto}.site-utilities button{background:#0a1a36b8;color:#c4dcff;border-color:#71a3eb44}
+.room-panel{--site-paper:#edf2f9;--site-ink:#172d4f;--site-red:#275cdf;--site-rule:#3152782c;position:fixed;inset:0;margin:auto;width:min(1140px,calc(100vw - 88px));height:min(880px,calc(100dvh - 112px));max-width:none;max-height:none;padding:0;border:1px solid #4773a0;border-radius:12px;background:var(--site-paper);color:var(--site-ink);box-shadow:0 32px 100px #02081799;overflow:hidden;font-family:"Avenir Next","PingFang SC",sans-serif}
+.room-panel[open]{display:flex;flex-direction:column;animation:panel-arrive .2s ease-out}
+.room-panel::backdrop{background:#02091966;backdrop-filter:blur(2px)}
+.room-panel-bar{display:flex;align-items:center;gap:16px;flex-shrink:0;min-height:65px;padding:12px 20px;background:#122542;border-bottom:3px solid #ee873b;color:#e3edff}
+.room-panel-bar>strong{font-size:16px;font-weight:600;white-space:nowrap}
+.room-panel-bar button{font:500 13px/1.5 "Avenir Next","PingFang SC",sans-serif;min-height:38px;padding:7px 10px;color:#b9cce7;background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer}
+.room-panel-bar button:hover{background:#294464;color:#fff}.room-panel-bar button:focus-visible{outline-color:#ffa563}
+.room-panel-bar .panel-close{font-size:27px;line-height:1;padding:4px;width:38px;margin-left:4px;color:#e4edfb;border-color:#6582a850;flex-shrink:0}
+.room-panel-bar .panel-back{font-size:21px;padding:3px;width:32px;flex-shrink:0}
+.panel-tabs{margin-left:auto;display:flex;gap:3px;flex-wrap:wrap;align-items:center}.panel-tabs button[aria-pressed=true]{color:#ffae71;background:#ffffff0b}
+.room-panel #site-view{position:relative;inset:auto;z-index:auto;padding:0;width:100%;flex:1;min-height:0;background:var(--site-paper);overflow:auto;overscroll-behavior:contain;scroll-behavior:auto;scrollbar-color:#96adca transparent}
+.room-panel .site-content{max-width:none;padding:32px 34px 38px}.room-panel .site-page-footer{display:none}
+.room-panel .site-state{padding:50px 34px;min-height:350px}.room-panel .site-state h1{font-size:28px}
+.room-panel .site-kicker{font-size:10px;letter-spacing:1px}.room-panel .catalog-heading{margin-bottom:22px;gap:22px}
+.room-panel .catalog-heading h1,.room-panel .title-copy h1,.room-panel .submission-heading h1,.room-panel .community-hero h1,.room-panel .board-heading h1{font-size:34px;line-height:1.3;letter-spacing:-1px;margin:10px 0 12px}
+.room-panel .collection-number b{font-size:45px;letter-spacing:-2px}.room-panel .collection-number span{font-size:11px}
+.room-panel .catalog-caption{padding:15px 0 24px}.room-panel .catalog-tools{gap:14px}.room-panel .category-tabs{flex-wrap:wrap;gap:4px}.room-panel .category-tabs button{padding:8px 12px}
+.room-panel .site-game-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:28px 25px;max-width:none}
+.room-panel .site-cartridge{padding:13px 13px 16px;box-shadow:inset 1px 2px 1px #ffffff60,4px 5px #183c6426}
+.room-panel .cartridge-link{padding:4px 5px 10px}.room-panel .cartridge-caption{font-size:13px;min-height:45px;padding:7px 4px;display:flex;align-items:center;justify-content:center}
+.room-panel .cartridge-imprint{font-size:9px}.room-panel .cartridge-imprint i{display:none}
+.room-panel .title-card-placeholder{font-size:19px;padding:18px 10px;aspect-ratio:5/4}.room-panel .title-card-placeholder small{font-size:9px;margin-bottom:15px}
+.room-panel .catalog-game h2{font-size:19px;line-height:1.45}.room-panel .catalog-game>p{font-size:13px;line-height:1.65;min-height:0;margin:8px 0 12px}.room-panel .catalog-meta{font-size:11px}
+.room-panel .catalog-invite{margin-top:32px;padding:25px 0}.room-panel .catalog-invite h2{font-size:24px}.room-panel .site-lead{font-size:14px}
+.room-panel .title-layout{gap:36px;grid-template-columns:.8fr 1.2fr}.room-panel .title-cover{top:20px;padding:10px}.room-panel .site-back{margin-bottom:20px}
+.room-panel .title-description{max-width:none}.room-panel .title-actions{margin:22px 0;gap:16px}
+.room-panel .community-hero .site-content{padding:30px 34px}.room-panel .community-stamp,.room-panel .submission-stamp,.room-panel .board-mark{display:none}
+.room-panel .community-hero h1 br{display:none}.room-panel .community-hero p{max-width:none;font-size:14px}.room-panel .community-hero .site-button{margin-top:20px}
+.room-panel .community-section-heading{margin-bottom:20px}.room-panel .community-section-heading h2{font-size:25px}
+.room-panel .participation-row{grid-template-columns:28px 1fr;gap:12px 18px;padding:22px 0}.room-panel .participation-row .site-row-link{grid-column:2;justify-self:start;padding:0}.room-panel .participation-row p{max-width:none;font-size:14px}
+.room-panel .community-local{padding:25px;margin-top:28px}.room-panel .community-local h2{font-size:24px}
+.room-panel .board-heading,.room-panel .submission-heading{margin-bottom:25px}.room-panel .board-heading p,.room-panel .submission-heading p{font-size:14px;line-height:1.7}
+.room-panel .board-layout{grid-template-columns:minmax(240px,.85fr) minmax(0,1.15fr);gap:28px}.room-panel .board-compose{padding:23px}.room-panel .board-wall-top{flex-wrap:wrap;gap:12px}.room-panel .board-wall-top h2{font-size:22px}
+.room-panel .submission-layout{grid-template-columns:minmax(0,1fr) 225px;gap:30px}.room-panel .submission-heading h1 span{display:inline;margin-right:.25em}.room-panel .submission-aside{padding-left:24px}.room-panel .submission-aside h2{font-size:22px}
+.room-panel :is(input,textarea,select){font-size:15px}.room-panel .submission-form label,.room-panel .board-label{font-size:14px}.room-panel .submission-fields{gap:16px}
+.room-panel .submission-inbox{margin-top:35px;padding-top:30px}.room-panel .submission-list{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px}
+.room-panel .inbox-heading h2{font-size:27px}.room-panel .inbox-heading p{font-size:14px}.in-room-play{width:100%;text-align:left;background:transparent;padding:12px 0;color:#275cdf;cursor:pointer}
+.scene-error{display:flex;min-height:100%;padding:50px;gap:20px;flex-direction:column;align-items:center;justify-content:center;text-align:center}.scene-error h1{font-size:28px}.scene-error button{padding:13px 20px;background:#254c87;color:#e5efff;border:1px solid #577aa6;border-radius:4px}
+@keyframes panel-arrive{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media(max-width:850px){.room-panel-bar{gap:10px;padding:12px 15px}.room-panel-bar>strong{font-size:14px}.room-panel-bar button{font-size:12px;padding:7px}.room-panel .submission-layout{grid-template-columns:minmax(0,1fr)}.room-panel .submission-aside{border:0;border-top:1px solid var(--site-rule);padding:24px 0 0}.room-panel .submission-aside ol{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.room-panel .board-layout{grid-template-columns:minmax(0,1fr)}.room-panel .board-compose{padding:20px}.room-panel .board-compose textarea{min-height:120px}.room-panel .community-local{align-items:flex-start;flex-direction:column;gap:22px}}
+@media(max-width:600px){#site-header,body.is-3d #site-header{padding:17px 18px}.room-panel{width:calc(100vw - 24px);height:calc(100dvh - 42px);border-radius:9px}.room-panel-bar{flex-wrap:wrap;gap:6px;padding:8px 12px;min-height:58px}.room-panel-bar>strong{font-size:15px;flex:1}.room-panel-bar .panel-close{order:2;margin-left:auto}.panel-tabs{order:3;flex-basis:100%;justify-content:space-between;margin-left:0;border-top:1px solid #7798c633;padding-top:5px}.room-panel-bar .panel-tabs button{font-size:12px;padding:6px 9px}.room-panel .site-content,.room-panel .community-hero .site-content{padding:24px 19px}.room-panel .catalog-heading h1,.room-panel .title-copy h1,.room-panel .submission-heading h1,.room-panel .community-hero h1,.room-panel .board-heading h1{font-size:28px}.room-panel .collection-number{display:none}.room-panel .site-game-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 14px}.room-panel .catalog-game h2{font-size:16px}.room-panel .cartridge-imprint{font-size:7px}.room-panel .cartridge-caption{font-size:11px;min-height:44px}.room-panel .site-cartridge{padding:9px 8px 12px}.room-panel .catalog-game>p{font-size:12px}.room-panel .title-card-placeholder{font-size:14px;padding:12px 5px}.room-panel .title-card-placeholder small{font-size:7px;margin-bottom:10px}.room-panel .catalog-meta{font-size:10px;align-items:start}.room-panel .catalog-caption p{display:none}.room-panel .title-layout{display:flex;flex-direction:column}.room-panel .title-cover{width:70%;max-width:300px}.room-panel .submission-fields{grid-template-columns:1fr}.room-panel .submission-aside ol{grid-template-columns:1fr;gap:0}.room-panel .inbox-heading{align-items:flex-start;flex-direction:column}.room-panel .submission-list{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.room-panel[open]{animation:none}}
+.game-stage{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 9px}.game-stage span{padding:4px 7px;background:#dce7f7;border:1px solid #a9bedf;border-radius:3px;color:#31537f;font:500 11px/1.35 "Avenir Next","PingFang SC",sans-serif}.game-stage .is-featured{background:#ffe2cd;border-color:#eda66e;color:#834216}.room-panel .title-copy>.game-stage{margin:16px 0}.room-panel .cartridge-image.submitted-art{object-fit:cover}
+
+/* Screen collections stay readable on the physical CRT, regardless of viewport. */
+.three-screen .screen-shell{padding:20px 24px 14px}
+.three-screen .screen-head{margin-bottom:10px}
+.screen-collections{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px;flex:none}
+.screen-collections button{display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid #496388;border-radius:3px;background:#16263d;color:#bed0e3;padding:10px 6px;font:15px/1.2 "PingFang SC",sans-serif;white-space:nowrap}
+.screen-collections button[aria-pressed=true]{background:#ed883c;color:#10233b;border-color:#ffb477;font-weight:650}
+.screen-collections small{font-size:12px;opacity:.8}
+.three-screen .menu-heading{font:600 19px/1.2 "PingFang SC",sans-serif;margin-bottom:10px}
+.three-screen .screen-body{min-height:0;gap:18px;grid-template-columns:1.3fr 1fr;flex:1}
+.three-screen .game-menu{display:flex;flex-direction:column;min-height:0}
+.three-screen .game-list{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.three-screen .game-option{font:15px/1.3 "PingFang SC",sans-serif;height:auto;min-height:38px;white-space:normal;padding:9px 8px 9px 23px}
+.three-screen .preview-panel{gap:10px;min-height:0}
+.three-screen .preview-art{width:190px;height:142px;flex-shrink:1}
+.screen-selected-stage{color:#dfb18c;font:12px/1.4 "PingFang SC",sans-serif;text-align:center}
+.three-screen .screen-nav{flex:none;margin-top:10px;padding-top:8px;justify-content:space-between}
+.three-screen .load-game{font-size:16px;padding:11px 6px}
+.three-screen .screen-footer{flex:none;font-size:12px;margin-top:7px}
+.immersive #screen .playing{padding-top:54px;display:flex;flex-direction:column;width:100%;height:100dvh}
+.immersive #player{position:relative;flex:1;min-height:0;min-width:0;background:#050a13}
+.immersive #player iframe{display:block;position:absolute;inset:0;width:100%;height:100%;border:0}
+.immersive .game-toolbar{flex:none}
+.resource-content,.guide-content{max-width:840px;margin:0 auto;line-height:1.8}
+.resource-content h1,.guide-content h1{font-size:30px;margin-bottom:20px}
+.resource-content h2{font-size:22px;margin:22px 0 12px}
+.resource-content p,.guide-content p{margin:15px 0}
+.resource-url{display:block;padding:16px;background:#dee7f2;overflow-wrap:anywhere;color:#244470;margin:18px 0}
+.resource-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:24px 0}
+.guide-steps{padding-left:24px}.guide-steps li{margin:12px 0}
+.guide-content details{border-top:1px solid #9cb2cc;padding:18px 0}
+.guide-content summary{cursor:pointer;font-weight:600}.guide-source{font:13px/1.8 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#e2eaf4;padding:20px;border-radius:5px}
+@media(max-width:600px){.resource-content h1,.guide-content h1{font-size:25px}.guide-source{padding:12px}.immersive #screen .game-toolbar :is(button,a){font-size:12px}}
+
+.immersive #screen::before,.immersive #screen::after{display:none}
+
+/* Language controls stay available inside each modal. */
+.room-panel-bar>.site-language{border-color:#6582a850;flex-shrink:0;min-width:43px}
+.dialog-language{float:right;margin:-12px 25px 12px 0;padding:6px 10px;border:1px solid #a99d85;border-radius:4px;background:transparent;color:#635239}
+@media(max-width:600px){.room-panel-bar>.site-language{order:1}.room-panel-bar .panel-tabs button{padding:6px;font-size:11px}}
+
+/* Only the room owns pinch gestures; forms and game iframes retain their controls. */
+#three-room:not(.immersive),#three-room:not(.immersive) #screen{touch-action:none}
+.touch-guide{display:none;position:absolute;z-index:12;bottom:max(22px,env(safe-area-inset-bottom));left:12px;right:12px;color:#c3d6f1;font:12px/1.6 "Avenir Next","PingFang SC",sans-serif;text-align:center;pointer-events:none}
+.touch-used .touch-guide,.immersive .touch-guide{display:none!important}
+@media(pointer:coarse),(max-width:600px){
+ .touch-guide{display:block}
+ .site-utilities button,.room-panel-bar button,.room-panel-bar .panel-close,.room-panel-bar .panel-back,.dialog-close,.dialog-language{min-height:44px;min-width:44px}
+ .room-panel :is(input,textarea,select){font-size:16px}
+ .room-panel .category-tabs button,.room-panel .site-button,.room-panel .site-text-link,.room-panel .site-back{min-height:44px}
+ .room-panel .catalog-tools input{min-height:46px}
+ .room-panel .panel-tabs{gap:0}
+ .room-panel .panel-tabs button{padding:8px;font-size:12px}
+ .immersive #screen .game-toolbar :is(button,a){min-height:44px}
+ .immersive #screen .game-toolbar{gap:6px;flex-wrap:wrap}
+ .immersive .exit-immersive{top:max(10px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));min-height:44px}
+ .immersive #screen .playing{padding-top:calc(58px + env(safe-area-inset-top));padding-bottom:env(safe-area-inset-bottom)}
+}
+@media(max-width:600px){
+ #site-header,body.is-3d #site-header,body.is-3d:not(.site-open) #site-header{padding:max(12px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 12px max(14px,env(safe-area-inset-left))}
+ .room-panel{width:calc(100vw - 16px);height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));margin:auto 8px;top:env(safe-area-inset-top);bottom:env(safe-area-inset-bottom)}
+ .room-panel-bar{padding:6px 10px}
+ .room-panel-bar .panel-back,.room-panel-bar .panel-close{width:44px}
+ .room-panel-bar>strong{min-width:0;overflow:hidden;text-overflow:ellipsis}
+ .room-panel .panel-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%}
+ .room-panel .panel-tabs button{min-width:0;white-space:normal;line-height:1.3;font-size:11px;padding:6px 3px;text-align:center}
+ .room-panel .submission-consent{min-width:0;min-height:44px}
+ .room-panel .submission-consent span{min-width:0;white-space:normal;overflow-wrap:anywhere;margin-left:0}
+ .room-panel .site-content{padding:22px 16px}
+ .room-panel .cartridge-caption{overflow-wrap:anywhere}
+ /* CSS3D scales a 640px screen down to phone width: enlarge its touch targets. */
+ #three-room:not(.immersive) .three-screen .screen-shell{padding:16px}
+ #three-room:not(.immersive) .three-screen .screen-head,#three-room:not(.immersive) .three-screen .screen-footer{display:none}
+ #three-room:not(.immersive) .three-screen .screen-collections{gap:8px;margin-bottom:10px}
+ #three-room:not(.immersive) .three-screen .screen-collections button{font-size:22px;min-height:82px;padding:8px 3px}
+ #three-room:not(.immersive) .three-screen .screen-collections small{font-size:20px}
+ #three-room:not(.immersive) .three-screen .screen-body{grid-template-columns:minmax(0,1fr);gap:0}
+ #three-room:not(.immersive) .three-screen .menu-heading{display:none}
+ #three-room:not(.immersive) .three-screen .game-option{font-size:24px;min-height:82px;line-height:1.2;padding:12px 16px 12px 32px}
+ #three-room:not(.immersive) .three-screen .preview-panel{position:absolute;right:18px;bottom:18px}
+ #three-room:not(.immersive) .three-screen .preview-art,#three-room:not(.immersive) .three-screen .screen-selected-stage{display:none}
+ #three-room:not(.immersive) .three-screen .load-game{font-size:23px;min-height:82px;padding:12px;background:#ed873d;color:#10213b;border-radius:4px}
+ #three-room:not(.immersive) .three-screen .screen-nav{padding:0 190px 0 0;margin-top:10px;gap:12px;min-height:82px;align-items:center}
+ #three-room:not(.immersive) .three-screen .screen-nav button{font-size:22px;min-height:82px;white-space:normal}
+ #three-room:not(.immersive) .three-screen .screen-search{display:none}
+}
+
+/* Phone content rhythm: one type scale across both languages and every panel. */
+.room-panel .submission-consent{display:flex;align-items:flex-start;gap:10px;min-width:0}
+.room-panel .submission-consent input[type=checkbox]{width:20px;height:20px;min-width:20px;flex:0 0 20px;margin:2px 0 0;padding:0}
+.room-panel .submission-consent span{flex:1;min-width:0;white-space:normal;overflow-wrap:anywhere}
+@media(max-width:600px){
+ html[lang] .room-panel #site-view{overflow-x:hidden}
+ html[lang] .room-panel .site-content,html[lang] .room-panel .community-hero .site-content{padding:24px 18px 28px}
+ html[lang] .room-panel :is(.catalog-heading,.submission-heading,.board-heading){margin-bottom:24px}
+ html[lang] .room-panel :is(.catalog-heading,.submission-heading,.board-heading,.community-hero,.title-copy) h1{font-size:28px;line-height:1.25;letter-spacing:-.7px;margin:10px 0 14px;max-width:100%;overflow-wrap:anywhere}
+ html[lang] .room-panel .submission-heading h1 span{display:block;margin:0}
+ html[lang] .room-panel .site-kicker{font-size:10px;line-height:1.5;letter-spacing:.8px}
+ html[lang] .room-panel :is(.site-lead,.submission-heading>p:not(.site-kicker),.board-heading>p:not(.site-kicker),.community-hero p,.title-description){font-size:14px;line-height:1.75}
+ html[lang] .room-panel .community-hero h1 br,html[lang] .room-panel .community-hero p br{display:initial}
+ html[lang] .room-panel .community-hero .site-button{margin-top:20px}
+ html[lang] .room-panel h2{font-size:23px;line-height:1.35;letter-spacing:-.3px;overflow-wrap:anywhere}
+ html[lang] .room-panel .catalog-game h2{font-size:16px;line-height:1.4;letter-spacing:0}
+ html[lang] .room-panel .catalog-game>p{line-height:1.7}
+ html[lang] .room-panel .catalog-tools{gap:12px;padding-bottom:16px}
+ html[lang] .room-panel .catalog-caption{padding:12px 0 20px}
+ html[lang] .room-panel .site-game-grid{gap:28px 16px}
+ html[lang] .room-panel .catalog-search,html[lang] .room-panel .catalog-search input{min-width:0;width:100%}
+ html[lang] .room-panel :is(input:not([type=checkbox]):not([type=radio]),textarea,select){border-radius:4px;border-color:#adbed3;background:#f8fafc;color:#172d4f;font-size:16px;line-height:1.5;padding:12px;min-height:48px}
+ html[lang] .room-panel .submission-form :is(input:not([type=checkbox]),textarea,select){margin-bottom:20px}
+ html[lang] .room-panel .submission-form label:not(.submission-consent){margin-bottom:8px}
+ html[lang] .room-panel .submission-fields{gap:0}
+ html[lang] .room-panel .submission-consent{align-items:flex-start;gap:10px}
+ html[lang] .room-panel .submission-consent input{width:20px;height:20px;margin-top:2px}
+ html[lang] .room-panel .submission-consent span{font-size:13px;line-height:1.65;flex:1;min-width:0}
+ html[lang] .room-panel .board-compose{padding:18px;background:#e2ebf6;border:1px solid #b6c8df;box-shadow:none;border-radius:5px}
+ html[lang] .room-panel .board-kind{gap:8px}
+ html[lang] .room-panel .board-kind label{min-width:0}
+ html[lang] .room-panel .board-kind span{font-size:13px;min-height:46px;padding:11px 5px;border-color:#a9bed8;background:#f2f6fc;color:#35516f}
+ html[lang] .room-panel .board-kind input:checked+span{background:#275cdf;border-color:#275cdf;color:#fff}
+ html[lang] .room-panel .board-compose fieldset{margin-bottom:20px}
+ html[lang] .room-panel .board-compose textarea{min-height:140px}
+ html[lang] .room-panel .board-layout{gap:30px}
+ html[lang] .room-panel .title-layout{gap:0}
+ html[lang] .room-panel .title-copy{display:contents}
+ html[lang] .room-panel .title-copy>.site-kicker{order:-5;margin:0 0 8px}
+ html[lang] .room-panel .title-copy>h1{order:-4;margin:0 0 14px}
+ html[lang] .room-panel .title-copy>.game-stage{order:-3;margin:0 0 14px}
+ html[lang] .room-panel .title-copy>.title-description{order:-2;margin:0 0 8px}
+ html[lang] .room-panel .title-copy>.title-actions{order:-1}
+ html[lang] .room-panel .title-cover{position:static;width:100%;max-width:240px;padding:12px;margin:8px auto}
+ html[lang] .room-panel .title-cover .cartridge-caption{font-size:16px;line-height:1.4;padding:12px 6px}
+ html[lang] .room-panel .title-cover .cartridge-imprint{font-size:10px}
+ html[lang] .room-panel .title-cover-note{font-size:11px;margin-top:16px;overflow-wrap:anywhere}
+ html[lang] .room-panel .title-actions{gap:10px;margin:20px 0 26px;align-items:stretch}
+ html[lang] .room-panel .title-actions .site-button{flex:1;justify-content:space-between}
+ html[lang] .room-panel .title-instructions,html[lang] .room-panel .title-notes{padding-top:22px;margin-top:22px}
+ html[lang] .room-panel .control-keys{white-space:normal;overflow-wrap:anywhere;line-height:1.8}
+ html[lang] .room-panel .title-notes dl div{grid-template-columns:72px minmax(0,1fr);gap:12px}
+ html[lang] .room-panel .participation-row{grid-template-columns:24px minmax(0,1fr);gap:10px 12px;padding:22px 0}
+ html[lang] .room-panel .participation-row h3{font-size:19px;line-height:1.35;overflow-wrap:anywhere}
+ html[lang] .room-panel .participation-row .site-row-link{display:flex;align-items:center;min-height:44px;line-height:1.5;white-space:normal}
+ html[lang] .room-panel .community-local{padding:20px;margin-top:24px}
+ html[lang] .room-panel .community-footnote{line-height:1.75;overflow-wrap:anywhere}
+ html[lang] .room-panel .community-footnote a{display:block;margin:12px 0 0;padding:10px 0}
+ html[lang] .room-panel .resource-actions{gap:10px}
+ html[lang] .room-panel .resource-actions>*{flex:1 1 100%;min-height:44px;white-space:nowrap}
+ html[lang] .room-panel .guide-source{font-size:12px;line-height:1.75;padding:14px}
+ html[lang] .room-panel .guide-content summary{min-height:44px;padding:8px 0}
+}
+.room-panel .board-honeypot{inset:auto!important;position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%);white-space:nowrap}
+/* Landscape phones need the vertical space for content and game play. */
+@media(max-height:500px) and (max-width:1000px) and (orientation:landscape){
+ .room-panel{width:calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right));height:calc(100dvh - 20px);inset:0;margin:auto}
+ .room-panel-bar{min-height:54px;padding:5px 10px;gap:8px}
+ .room-panel-bar button,.room-panel-bar .panel-close,.room-panel-bar .panel-back{min-height:44px}
+ .room-panel-bar>.site-language,.room-panel-bar .panel-close{order:initial}
+ .room-panel-bar>strong{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .room-panel .panel-tabs{margin-left:auto;flex-basis:auto;flex-wrap:nowrap;order:initial;border:0;padding:0;gap:2px}
+ .room-panel .panel-tabs button{font-size:11px;padding:6px;white-space:normal;line-height:1.25}
+ .room-panel .site-content,.room-panel .community-hero .site-content{padding:22px 24px}
+ html[lang] .room-panel :is(.catalog-heading,.submission-heading,.board-heading,.community-hero,.title-copy) h1{font-size:27px;line-height:1.3;margin:8px 0 12px}
+ .room-panel .submission-aside ol{grid-template-columns:1fr}
+ .room-panel .title-cover{position:static}
+ .immersive #screen .playing{padding-top:48px;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+ .immersive .exit-immersive{top:8px;right:max(10px,env(safe-area-inset-right));padding:8px 12px;min-height:40px;opacity:.9}
+ .immersive #screen .game-toolbar{padding:4px 12px;gap:10px}
+ .immersive #screen .game-toolbar :is(button,a){min-height:40px}
+ .touch-guide{bottom:max(10px,env(safe-area-inset-bottom))}
+}

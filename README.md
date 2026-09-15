@@ -57,3 +57,19 @@ The previous Sites deployment remains available and continues to relay its board
 ## Content and licensing
 
 Original website code is MIT-licensed. Third-party game assets, fonts, and library licenses remain separate; see `THIRD_PARTY_NOTICES.md`. Secrets and player records do not belong in this repository.
+
+## Chinese and English
+
+`ui/i18n.mjs` switches the interface in place, including modal controls and form validation, without replacing draft input or game iframes. `lib/i18n.mjs` contains interface strings and the shared bilingual search matcher.
+
+`content/game-locales.json` stores reviewed display translations for the seven currently curated games, keyed by playable URL. Each entry pairs original `zh` text with `en` values for names, descriptions, instructions, credits and captions. Add matching fields in both languages when curating another game. These display translations do not overwrite catalog or submission records. Nicknames, player notes and unrecognized user content retain their original text. Covers and embedded games retain their own artwork and supported languages.
+
+Full on-site guides are paired as `static/guides/<guide>.zh.md` and `<guide>.en.md`; maintain both when the submission workflow changes. Run `npm test` and check the room, catalog, game details, forms and guides in both languages after editing translations.
+
+## Touch navigation
+
+On the room canvas, one finger rotates the view, spreading two fingers approaches their midpoint, and bringing them together returns toward the entry overview. Cabinet inspection has a second, closer stop. A tap inserts a cartridge; lifting fingers after a pinch cannot insert one. Phone taps use insertion directly instead of desktop cartridge dragging. Screen menus remain tappable and their game list can be swiped.
+
+`scene/touch-navigation.mjs` owns touch gestures only within the room. Modal forms keep native scrolling and browser zoom; full-window game iframes keep their own touch controls. The room does not add mobile gameplay controls to third-party games. Pointer cancellation, lost focus and orientation changes reset the gesture. Portrait framing uses a wider camera field of view, and coarse-pointer devices use a lower rendering pixel ratio.
+
+The gesture state machine and camera paths have automated regression tests. Responsive browser checks cover 360 × 800, 390 × 844, 430 × 932 and 844 × 390 layouts, including the catalog, submissions, notes, community, game details and guides in Chinese and English. Full-window game framing and unloading on return are also checked. Physical iOS/Android multi-touch still needs a real-device check before claiming device compatibility.

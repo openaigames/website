@@ -1,0 +1,32 @@
+{
+  "https://dirty-room.zackliny.chatgpt.site/": {
+    "cover_url": "/static/games/community/dirty-room.jpg",
+    "gameplay_url": "/static/games/community/dirty-room-gameplay.jpg",
+    "development_stage": "可试玩 Demo",
+    "image_caption": "2026-09-15 实际打开游戏后截取的标题与试玩画面。"
+  },
+  "https://snkrx-godot-preview.pages.dev/": {
+    "cover_url": "/static/games/community/snkrx.jpg",
+    "gameplay_url": "/static/games/community/snkrx.jpg",
+    "development_stage": "阶段试玩版",
+    "image_caption": "2026-09-15 实际试玩截图。非官方复刻，完整还原尚未完成。"
+  },
+  "https://sunset-harbor-stories.nce16220811.chatgpt.site/": {
+    "cover_url": "/static/games/community/harbor.jpg",
+    "gameplay_url": "/static/games/community/harbor.jpg",
+    "development_stage": "体验版 v6.3.1",
+    "image_caption": "2026-09-15 自由探索模式实机截图。"
+  },
+  "https://shenzh21.github.io/wind-book-journey-playtest/": {
+    "cover_url": "/static/games/community/wind-book.jpg",
+    "gameplay_url": "/static/games/community/wind-book.jpg",
+    "development_stage": "内测试玩",
+    "image_caption": "2026-09-15 实际打开游戏后截取的试玩画面。"
+  },
+  "https://iron-swarm-combat.nick-gpt-9.chatgpt.site/": {
+    "cover_url": "/static/games/community/iron-swarm.jpg",
+    "gameplay_url": "/static/games/community/iron-swarm-gameplay.jpg",
+    "development_stage": "可试玩 Demo",
+    "image_caption": "2026-09-15 游戏标题封面与灰线哨站战役实机截图。"
+  }
+}
