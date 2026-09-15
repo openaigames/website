@@ -12,7 +12,11 @@ async function run(sql) {
   const dir = await mkdtemp(join(tmpdir(),'openaigames-submissions-'));
   try {
     const file = join(dir,'operation.sql'); await writeFile(file,sql);
-    return JSON.parse(execFileSync('npx',['wrangler','d1','execute','DB',remote?'--remote':'--local','--config',config,'--file',file,'--json'],{encoding:'utf8',maxBuffer:4*1024*1024}));
+    const output = execFileSync('npx',['wrangler','d1','execute','DB',remote?'--remote':'--local','--config',config,'--file',file,'--json'],{encoding:'utf8',maxBuffer:4*1024*1024});
+    // Remote file imports print upload progress before their JSON result.
+    const start = output.search(/^\[\s*(?:\{|\])/m), end = output.lastIndexOf(']');
+    if (start < 0 || end < start) throw Error('Wrangler returned no JSON result');
+    return JSON.parse(output.slice(start,end+1));
   } finally { await rm(dir,{recursive:true,force:true}); }
 }
 if (command === 'import' && rest.length === 1) {
