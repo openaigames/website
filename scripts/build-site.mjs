@@ -11,7 +11,7 @@ await rm(dist, { recursive: true, force: true });
 await mkdir(resolve(dist, 'client/static'), { recursive: true });
 await copyFile(resolve(root, 'content/catalog.json'), resolve(dist, 'client/catalog.json'));
 await copyFile(resolve(root, 'static/index.html'), resolve(dist, 'client/index.html'));
-for (const name of ['console.js','console.css','site.js','site.css','board.js','board.css','scene3d.js','scene3d.css','cloud.js','webmcp.js','models','console','retro','games']) {
+for (const name of ['console.js','console.css','site.js','site.css','board.js','board.css','submissions.js','submissions.css','scene3d.js','scene3d.css','cloud.js','webmcp.js','models','console','retro','games']) {
   await cp(resolve(root, 'static', name), resolve(dist, 'client/static', name), { recursive: true });
 }
 await build({ entryPoints: [resolve(root, 'worker/index.js')], outfile: resolve(dist, 'server/index.js'), bundle: true, format: 'esm', platform: 'browser', target: 'es2022' });

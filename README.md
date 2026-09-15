@@ -4,6 +4,29 @@ The Three.js community game showcase deployed at https://openaigames.lens-fronti
 
 The homepage shows featured cartridges. The catalog lists every published game. Game submissions live in [openaigames/community](https://github.com/openaigames/community); contributors use its [submission guide](https://github.com/openaigames/community/blob/main/docs/GAME_SUBMISSION.md), [template](https://github.com/openaigames/community/blob/main/templates/game.json), and [Agent skill](https://github.com/openaigames/community/blob/main/skills/openaigames-submit-demo/SKILL.md).
 
+## Quick submissions
+
+`/#/submit` accepts a title, HTTPS play URL and short description without a GitHub account. Entries are persisted in the production `DB` binding and publicly listed in the **试玩收件箱** on the submission and catalog pages. Submitting requires acknowledgement of public display. Self-submissions and recommendations are explicitly distinguished; names are self-declared. Intake is separate from the reviewed PR catalog: it does not claim author verification or create a GitHub PR automatically. Preview deployments cannot access intake.
+
+`POST /api/submissions` bounds input, restricts URLs, checks same origin and JSON, applies a 30-second per-client throttle, rejects duplicate links and supports idempotent retries. It does not fetch submitted URLs server-side. `GET /api/submissions` paginates 20 entries with optional `q` and `before`; request IDs and throttle keys are never public. Pending records are public immediately; the existing board is unchanged.
+
+Maintainers can export records to prepare a community PR and reversibly hide spam or a record already fully archived in the catalog:
+
+```sh
+node scripts/submissions.mjs export /tmp/openaigames-intake.json --remote
+node scripts/submissions.mjs archive 123 --remote
+node scripts/submissions.mjs restore 123 --remote
+```
+
+The commands use existing Wrangler authorization; no public browser admin endpoint or broad GitHub credential is deployed. Obtain creator confirmation and the fields in the community submission guide before preparing `demos/<id>/game.json`. Merge its PR through the existing catalog workflow, then archive the intake record. Archiving hides it without deleting the retained submission. Omit `--remote` for local development.
+
+The five links shared on September 15 are kept in `content/submissions-2026-09-15.json` as recommendations, not attributed to guessed authors. Names and descriptions were checked against their live start pages; this is not a full gameplay review. Import is URL-deduplicated:
+
+```sh
+npx wrangler d1 migrations apply DB --remote --config wrangler.cloudflare.json
+node scripts/submissions.mjs import content/submissions-2026-09-15.json --remote
+```
+
 ## Local development
 
 ```sh

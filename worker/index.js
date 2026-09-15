@@ -2,10 +2,12 @@ import { board } from './board.js';
 import { json } from './board-http.js';
 import { relayBoard } from './board-relay.js';
 import { catalog, publishCatalog } from './catalog.js';
+import { submissions } from './submissions.js';
 export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
     try {
+      if (path === '/api/submissions') return await submissions(request, env, ctx);
       if (path === '/api/catalog' || path === '/catalog.json') return await catalog(request, env);
       if (path === '/internal/catalog') return await publishCatalog(request, env);
       if (env.CATALOG_MODE === 'preview' && path === '/api/board') return json({error:'预览站不接收正式留言。'},403);
@@ -21,7 +23,7 @@ export default {
       return await env.ASSETS.fetch(request);
     } catch (error) {
       console.error('request failed', path, error.message);
-      return json({ error: path === '/api/catalog' || path === '/catalog.json' ? '游戏目录暂时连接不上，请稍后重试。' : path.startsWith('/api/') ? '留言板暂时连接不上，内容还在，请稍后重试。' : '页面暂时无法打开，请稍后重试。' }, 503);
+      return json({ error: path === '/api/submissions' ? '投稿暂时连接不上，请稍后重试。' : path === '/api/catalog' || path === '/catalog.json' ? '游戏目录暂时连接不上，请稍后重试。' : path.startsWith('/api/') ? '留言板暂时连接不上，内容还在，请稍后重试。' : '页面暂时无法打开，请稍后重试。' }, 503);
     }
   }
 };
