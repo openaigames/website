@@ -79,7 +79,7 @@ export function nightRoom({scene, texture, targets, invalidate}) {
   box('wall_badge_face',.07,1.28,4.4,ROOM.left+.22,3.55,1.8,badgeMaterial,.025);
   const badgeHit=box('wall_badge_hit',.035,1.48,4.6,ROOM.left+.285,3.55,1.8,new T.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),0);
   badgeHit.userData.roomAction='github';targets.push(badgeHit);
-  const wordmark=sign('wall_wordmark','OpenAIGames',4.1,.59,ROOM.left+.27,3.85,1.8,{bg:'#102348',action:'github',runs:[{text:'OpenAI',color:'#ff903f'},{text:'Games',color:'#b7d9ff'}]});wordmark.rotation.y=Math.PI/2;
+  const wordmark=sign('wall_wordmark','OpenAIGames',4.1,.59,ROOM.left+.27,3.85,1.8,{bg:'#102348',action:'github',runs:[{text:'OpenAI',color:'#b7d9ff'},{text:'Games',color:'#ff903f'}]});wordmark.rotation.y=Math.PI/2;
   const githubLabel=sign('wall_github','组织 GitHub ↗',3.6,.46,ROOM.left+.27,3.23,1.8,{bg:'#102348',fg:'#b7d9ff',action:'github'});githubLabel.rotation.y=Math.PI/2;
   // A small shared work corner beside the organization badge.
   box('wall_pinboard_frame',.16,2.9,4.25,ROOM.left+.12,5.45,7,blue,.07);
@@ -115,6 +115,11 @@ export function nightRoom({scene, texture, targets, invalidate}) {
   const mouse=box('mouse',.55,.25,.8,1.15,.15,3.8,orange,.18);mouse.rotation.y=-.13;
   box('mouse_strip',.028,.018,.37,1.15,.28,3.7,cyan,.004);
   sign('desk_favorites','精选 / 最近玩过',4.6,.34,4.4,-.15,5.185,{bg:'#244fa9',fg:'#ffd1a7'});
+  const radio=box('room_radio',2.05,1.45,.72,5.25,.76,-2.6,orange,.1);radio.userData.roomAction='music';targets.push(radio);
+  sign('radio_label','音乐',1.05,.36,5.53,.84,-2.225,{action:'music',bg:'#132744',fg:'#ffc38c'});
+  for(let i=0;i<6;i++)box('radio_grille',.03,.85,.02,4.48+i*.085,.78,-2.225,navy,.006);
+  const radioLed=sign('radio_led','●',.16,.15,6.0,1.21,-2.22,{action:'music',bg:'#e87532',fg:'#d1e0f7'});
+  window.addEventListener('openaigames-music',event=>{const entry=signs.find(s=>s.mesh===radioLed);if(entry){const color=event.detail.playing?'#ffe4a8':'#31517d';if(entry.fg!==color){entry.fg=color;paint(entry);invalidate();}}});
 
   // Adult chair: 50 cm seat, 46 cm seat height, 122 cm headrest height.
   // It is pulled back and slightly left, facing the keyboard without covering it.
@@ -150,6 +155,6 @@ export function nightRoom({scene, texture, targets, invalidate}) {
     upperPosition:index=>new T.Vector3(-7.65+index*1.68,7.34,-3.25),
     deskPosition:index=>new T.Vector3(3.4+index*1.75,.02,1.45),
     updateCabinet:layout=>{updateSign('category_left',layout.shelves[0]?.label||'');updateSign('category_right',layout.shelves[1]?.label||'');updateSign('cabinet_page',`${layout.page+1} / ${layout.pages}`);},
-    actions:[['github','GitHub · 新标签打开'],['catalog','游戏目录'],['search','搜索游戏'],['previous','上一柜'],['next','下一柜'],['submit','快捷投稿'],['community','如何共创'],['board','许愿 / 留言']]
+    actions:[['github','GitHub · 新标签打开'],['catalog','游戏目录'],['search','搜索游戏'],['previous','上一柜'],['next','下一柜'],['music','音乐'],['submit','快捷投稿'],['community','如何共创'],['board','许愿 / 留言']]
   };
 }

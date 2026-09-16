@@ -10,19 +10,29 @@ export class RoomTouchGesture {
       this.multiple=true;
       const [a,b]=this.pointers.values();
       this.pinch={distance:Math.hypot(b.x-a.x,b.y-a.y),anchor:{x:(a.x+b.x)/2,y:(a.y+b.y)/2}};
-      this.handlers.pinchStart?.(this.pinch.anchor);
+      this.pinch.originDistance=this.pinch.distance;this.pinch.lastAnchor={...this.pinch.anchor};this.pinch.samples=0;this.pinch.mode=null;this.handlers.pinchStart?.(this.pinch.anchor);
     }
   }
   move(point) {
     if(!this.pointers.has(point.id))return;
     this.pointers.set(point.id,point);
     if(this.pointers.size>=2){
-      const [a,b]=this.pointers.values(),distance=Math.hypot(b.x-a.x,b.y-a.y);
-      if(this.pointers.size===2&&distance>12&&this.pinch?.distance>12){
+      const [a,b]=this.pointers.values(),distance=Math.hypot(b.x-a.x,b.y-a.y),anchor={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+      if(this.pointers.size!==2||distance<=12||this.pinch?.distance<=12)return;
+      this.pinch.samples++;
+      if(!this.pinch.mode){
+        const translation=Math.hypot(anchor.x-this.pinch.anchor.x,anchor.y-this.pinch.anchor.y),spread=Math.abs(distance-this.pinch.originDistance);
+        // Let both fingers report their first move before classifying the gesture.
+        if(this.pinch.samples<2||Math.max(translation,spread)<8)return;
+        this.pinch.mode=translation>spread*.85&&this.handlers.pan?'pan':'zoom';
+        if(this.pinch.mode==='pan')this.handlers.panStart?.();
+      }
+      if(this.pinch.mode==='pan')this.handlers.pan?.({dx:anchor.x-this.pinch.lastAnchor.x,dy:anchor.y-this.pinch.lastAnchor.y});
+      else{
         const delta=Math.max(-120,Math.min(120,600*Math.log(this.pinch.distance/distance)));
         if(Math.abs(delta)>.01)this.handlers.zoom?.(delta,this.pinch.anchor);
       }
-      this.pinch.distance=distance;return;
+      this.pinch.distance=distance;this.pinch.lastAnchor=anchor;return;
     }
     // Lifting one finger after a pinch must never become a tap or one-finger drag.
     if(this.multiple)return;

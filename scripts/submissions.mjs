@@ -3,6 +3,7 @@ import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { cloudflareEnv } from './cloudflare-env.mjs';
 import { normalizeSubmission } from '../worker/submissions.js';
 const [command, ...args] = process.argv.slice(2);
 const remote = args.includes('--remote'), rest = args.filter(arg=>arg!=='--remote');
@@ -12,7 +13,7 @@ async function run(sql) {
   const dir = await mkdtemp(join(tmpdir(),'openaigames-submissions-'));
   try {
     const file = join(dir,'operation.sql'); await writeFile(file,sql);
-    const output = execFileSync('npx',['wrangler','d1','execute','DB',remote?'--remote':'--local','--config',config,'--file',file,'--json'],{encoding:'utf8',maxBuffer:4*1024*1024});
+    const output = execFileSync('npx',['wrangler','d1','execute','DB',remote?'--remote':'--local','--config',config,'--file',file,'--json'],{encoding:'utf8',maxBuffer:4*1024*1024,env:remote?cloudflareEnv():process.env});
     // Remote file imports print upload progress before their JSON result.
     const start = output.search(/^\[\s*(?:\{|\])/m), end = output.lastIndexOf(']');
     if (start < 0 || end < start) throw Error('Wrangler returned no JSON result');
@@ -29,9 +30,7 @@ if (command === 'import' && rest.length === 1) {
   const result = await run("SELECT id,title,url,description,submitter,relation,status,created_at FROM game_submissions ORDER BY id DESC;");
   await writeFile(rest[0],JSON.stringify(result.flatMap(item=>item.results||[]),null,2)+'\n');
   console.log('Exported submissions to '+rest[0]);
-} else if (['archive','restore'].includes(command) && rest.length === 1 && /^[1-9]\d*$/.test(rest[0])) {
-  console.log(JSON.stringify(await run(`UPDATE game_submissions SET status = '${command==='archive'?'archived':'pending'}' WHERE id = ${rest[0]};`),null,2));
 } else {
-  console.error('Usage: node scripts/submissions.mjs import input.json | export output.json | archive ID | restore ID [--remote]');
+  console.error('Usage: node scripts/submissions.mjs import input.json | export output.json [--remote]');
   process.exitCode=1;
 }

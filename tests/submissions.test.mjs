@@ -19,9 +19,11 @@ test('Quick submissions persist, deduplicate, paginate, validate and isolate pre
     const first=payload(); first.title='<img src=x onerror=alert(1)>';
     let response=await post(first); assert.equal(response.status,201);
     const entry=(await response.json()).entry;
-    assert.deepEqual((await(await get('?id='+entry.id)).json()).entry,entry);
+    assert.equal((await get('?id='+entry.id)).status,404);
+    assert.equal(entry.status,'pending');
+    assert.deepEqual((await(await get()).json()).entries,[]);
     assert.equal((await get('?id=99999')).status,404);assert.equal((await get('?id=1 OR 1=1')).status,400);
-    assert.equal(entry.title,first.title); assert.equal(entry.request_id,undefined); assert.equal(entry.relation,'recommend');
+    assert.equal(entry.title,first.title); assert.equal(entry.request_id,undefined); assert.equal(entry.relation,undefined);
     response=await post(first); assert.equal(response.status,200); assert.equal((await response.json()).entry.id,entry.id);
     assert.equal((await post({...first,title:'changed'})).status,409);
     assert.equal((await post(payload(),'192.0.2.2')).status,409);
@@ -41,6 +43,7 @@ test('Quick submissions persist, deduplicate, paginate, validate and isolate pre
     const dupe=await Promise.all([post(payload('https://games.example.org/same'),'192.0.2.5'),post(payload('https://games.example.org/same'),'192.0.2.6')]);
     assert.deepEqual(dupe.map(r=>r.status).sort(),[201,409]);
     for(let i=0;i<20;i++) await db.prepare('INSERT INTO game_submissions(request_id,title,url,description,submitter,relation,created_at) VALUES(?,?,?,?,?,?,?)').bind(crypto.randomUUID(),'旅行 '+i,'https://games.example.org/page'+i,'探索','玩家','creator',Date.now()).run();
+    await db.prepare("UPDATE game_submissions SET status='approved'").run();
     const page1=await (await get()).json(),page2=await (await get('?before='+page1.next)).json();
     assert.equal(page1.entries.length,20);assert.equal(page2.entries.length,3);assert.equal(page2.next,null);
     assert.equal(new Set([...page1.entries,...page2.entries].map(e=>e.id)).size,23);

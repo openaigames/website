@@ -20,10 +20,41 @@ export const submissions = sqliteTable('game_submissions', {
   description: text('description').notNull(),
   submitter: text('submitter').notNull(),
   relation: text('relation', { enum: ['creator','recommend'] }).notNull(),
-  status: text('status', { enum: ['pending','archived'] }).notNull().default('pending'),
+  status: text('status', { enum: ['pending','approved','rejected','archived'] }).notNull().default('pending'),
+  reviewVersion: integer('review_version').notNull().default(0),
+  reviewedAt: integer('reviewed_at'),
+  reviewedBy: text('reviewed_by'),
+  reviewNote: text('review_note').notNull().default(''),
   createdAt: integer('created_at').notNull(),
 }, t => [uniqueIndex('idx_submission_request').on(t.requestId), uniqueIndex('idx_submission_url').on(t.url), index('idx_submission_status_id').on(t.status,t.id)]);
 export const submissionLimits = sqliteTable('submission_limits', {
   key: text('key').primaryKey(),
   nextAt: integer('next_at').notNull(),
 }, t => [index('idx_submission_limits_next_at').on(t.nextAt)]);
+
+export const submissionReviews = sqliteTable('submission_reviews', {
+  id: text('id').primaryKey(),
+  submissionId: integer('submission_id').notNull(),
+  fromStatus: text('from_status').notNull(),
+  toStatus: text('to_status').notNull(),
+  actorId: integer('actor_id').notNull(),
+  actorLogin: text('actor_login').notNull(),
+  note: text('note').notNull(),
+  createdAt: integer('created_at').notNull(),
+}, t => [index('idx_reviews_submission').on(t.submissionId,t.createdAt)]);
+export const adminOAuthStates = sqliteTable('admin_oauth_states', {
+  hash: text('hash').primaryKey(),
+  verifier: text('verifier').notNull(),
+  returnTo: text('return_to').notNull().default('/admin'),
+  ipKey: text('ip_key').notNull(),
+  createdAt: integer('created_at').notNull(),
+}, t => [index('idx_oauth_ip_created').on(t.ipKey,t.createdAt)]);
+export const adminSessions = sqliteTable('admin_sessions', {
+  hash: text('hash').primaryKey(),
+  githubId: integer('github_id').notNull(),
+  login: text('login').notNull(),
+  token: text('token').notNull(),
+  csrf: text('csrf').notNull(),
+  expiresAt: integer('expires_at').notNull(),
+  verifiedAt: integer('verified_at').notNull(),
+}, t => [index('idx_admin_session_expiry').on(t.expiresAt)]);

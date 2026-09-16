@@ -1,6 +1,6 @@
 {
   "name": "openaigames-preview",
-  "account_id": "798cc288096e1beac5cb1611654fdf4a",
+  "account_id": "1df8f334169206788cc480fb569f1761",
   "main": "dist/server/index.js",
   "compatibility_date": "2026-05-15",
   "workers_dev": true,
@@ -12,18 +12,29 @@
       "/api/*",
       "/internal/*",
       "/community/*",
-      "/catalog.json"
+      "/catalog.json",
+      "/admin",
+      "/admin/",
+      "/static/admin",
+      "/static/admin/",
+      "/static/admin/index.html"
     ]
   },
   "d1_databases": [
     {
       "binding": "CATALOG",
       "database_name": "openaigames-catalog",
-      "database_id": "cb9dae75-dcd8-4a62-910b-fb299387a06a",
+      "database_id": "678c02e9-b7f7-4c32-b937-d6e1daa31f64",
       "migrations_dir": "catalog-migrations"
     }
   ],
   "vars": {
     "CATALOG_MODE": "preview"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "preview.openaigames.org",
+      "custom_domain": true
+    }
+  ]
 }

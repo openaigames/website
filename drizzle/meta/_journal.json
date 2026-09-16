@@ -15,6 +15,13 @@
       "when": 1789472170336,
       "tag": "0001_unique_clea",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789550139252,
+      "tag": "0002_living_barracuda",
+      "breakpoints": true
     }
   ]
 }

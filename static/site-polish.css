@@ -49,7 +49,7 @@ body>.room{display:none!important}
 #site-intro{display:none!important}
 #site-header,body.is-3d #site-header,body.site-open #site-header{color:#d6e8ff;padding:22px 30px;background:linear-gradient(#071126c9,transparent);border:0;flex-wrap:nowrap}
 #site-header nav,.site-brand small{display:none!important}
-.site-brand .brand-ai{color:#ff903f;font-weight:750}.site-brand .brand-games{color:#d6e8ff;font-weight:500}
+.site-brand .brand-ai{color:#d6e8ff;font-weight:750}.site-brand .brand-games{color:#ff903f;font-weight:500}
 .site-utilities{margin-left:auto}.site-utilities button{background:#0a1a36b8;color:#c4dcff;border-color:#71a3eb44}
 .room-panel{--site-paper:#edf2f9;--site-ink:#172d4f;--site-red:#275cdf;--site-rule:#3152782c;position:fixed;inset:0;margin:auto;width:min(1140px,calc(100vw - 88px));height:min(880px,calc(100dvh - 112px));max-width:none;max-height:none;padding:0;border:1px solid #4773a0;border-radius:12px;background:var(--site-paper);color:var(--site-ink);box-shadow:0 32px 100px #02081799;overflow:hidden;font-family:"Avenir Next","PingFang SC",sans-serif}
 .room-panel[open]{display:flex;flex-direction:column;animation:panel-arrive .2s ease-out}
@@ -171,19 +171,19 @@ body>.room{display:none!important}
  .room-panel .site-content{padding:22px 16px}
  .room-panel .cartridge-caption{overflow-wrap:anywhere}
  /* CSS3D scales a 640px screen down to phone width: enlarge its touch targets. */
- #three-room:not(.immersive) .three-screen .screen-shell{padding:16px}
+ #three-room:not(.immersive) .three-screen .screen-shell{padding:16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:82px minmax(0,1fr) 82px;gap:10px;height:100%}
  #three-room:not(.immersive) .three-screen .screen-head,#three-room:not(.immersive) .three-screen .screen-footer{display:none}
- #three-room:not(.immersive) .three-screen .screen-collections{gap:8px;margin-bottom:10px}
- #three-room:not(.immersive) .three-screen .screen-collections button{font-size:22px;min-height:82px;padding:8px 3px}
+ #three-room:not(.immersive) .three-screen .screen-collections{gap:8px;margin:0;grid-column:1/-1;grid-row:1;min-width:0}
+ #three-room:not(.immersive) .three-screen .screen-collections button{font-size:21px;min-height:82px;padding:8px 6px;min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.15;gap:5px}
  #three-room:not(.immersive) .three-screen .screen-collections small{font-size:20px}
- #three-room:not(.immersive) .three-screen .screen-body{grid-template-columns:minmax(0,1fr);gap:0}
+ #three-room:not(.immersive) .three-screen .screen-body{display:contents}
  #three-room:not(.immersive) .three-screen .menu-heading{display:none}
  #three-room:not(.immersive) .three-screen .game-option{font-size:24px;min-height:82px;line-height:1.2;padding:12px 16px 12px 32px}
- #three-room:not(.immersive) .three-screen .preview-panel{position:absolute;right:18px;bottom:18px}
+ #three-room:not(.immersive) .three-screen .preview-panel{position:static;grid-column:3;grid-row:3;min-width:0;display:flex;justify-content:stretch}
  #three-room:not(.immersive) .three-screen .preview-art,#three-room:not(.immersive) .three-screen .screen-selected-stage{display:none}
- #three-room:not(.immersive) .three-screen .load-game{font-size:23px;min-height:82px;padding:12px;background:#ed873d;color:#10213b;border-radius:4px}
- #three-room:not(.immersive) .three-screen .screen-nav{padding:0 190px 0 0;margin-top:10px;gap:12px;min-height:82px;align-items:center}
- #three-room:not(.immersive) .three-screen .screen-nav button{font-size:22px;min-height:82px;white-space:normal}
+ #three-room:not(.immersive) .three-screen .load-game{font-size:22px;line-height:1.2;min-height:82px;width:100%;height:100%;padding:8px;background:#ed873d;color:#10213b;border-radius:4px;white-space:normal;overflow-wrap:anywhere}
+ #three-room:not(.immersive) .three-screen .screen-nav{grid-column:1/3;grid-row:3;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:0;margin:0;gap:10px;min-height:82px;align-items:stretch;border:0}
+ #three-room:not(.immersive) .three-screen .screen-nav button{font-size:22px;line-height:1.2;min-height:82px;min-width:0;white-space:normal;overflow-wrap:anywhere;padding:8px}
  #three-room:not(.immersive) .three-screen .screen-search{display:none}
 }
 
@@ -270,3 +270,21 @@ body>.room{display:none!important}
  .immersive #screen .game-toolbar :is(button,a){min-height:40px}
  .touch-guide{bottom:max(10px,env(safe-area-inset-bottom))}
 }
+
+/* The mobile CRT uses fixed grid cells, never overlapping floating actions. */
+@media(max-width:600px){
+ #three-room:not(.immersive) .three-screen .game-menu{grid-column:1/-1;grid-row:2;overflow:hidden;min-width:0}
+ #three-room:not(.immersive) .three-screen .game-list{flex:1;min-height:0}
+ html[lang] #three-room:not(.immersive) .three-screen .screen-nav{gap:10px}
+ html[lang] #three-room:not(.immersive) .three-screen .screen-nav button{font-size:22px;white-space:normal}
+}
+
+/* A brief entry cue, shown only after the room finishes loading. */
+.room-entry-guide{position:absolute;z-index:12;left:50%;bottom:max(26px,env(safe-area-inset-bottom));transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);padding:8px 15px;border:1px solid #93b6e022;border-radius:24px;background:#091629ad;backdrop-filter:blur(8px);color:#c3d6f1;font:12px/1.6 "Avenir Next","PingFang SC",sans-serif;text-align:center;letter-spacing:.4px;pointer-events:none;animation:room-entry-fade 8s both;transition:opacity .3s}
+.room-entry-guide .entry-touch{display:none}
+.navigation-used .room-entry-guide{opacity:0;visibility:hidden;animation:none}
+.immersive .room-entry-guide,body.site-open .room-entry-guide,body.music-open .room-entry-guide{display:none}
+@media(pointer:coarse){.room-entry-guide .entry-mouse{display:none}.room-entry-guide .entry-touch{display:inline}}
+@media(max-width:600px){.room-entry-guide{font-size:11px;bottom:max(22px,env(safe-area-inset-bottom))}}
+@keyframes room-entry-fade{0%,75%{opacity:1}100%{opacity:0;visibility:hidden}}
+@media(prefers-reduced-motion:reduce){.room-entry-guide{animation:none;transition:none}}

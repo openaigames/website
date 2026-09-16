@@ -1,0 +1,9 @@
+{
+  "name": "openaigames",
+  "account_id": "798cc288096e1beac5cb1611654fdf4a",
+  "main": "worker/legacy-gateway.js",
+  "compatibility_date": "2026-05-15",
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": {"UPSTREAM": "https://openaigames.org", "GATEWAY_MODE": "production", "MIGRATION_READ_ONLY": "0"}
+}

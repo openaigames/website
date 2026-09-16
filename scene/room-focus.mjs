@@ -30,30 +30,45 @@ export function cabinetDetailForRay(ray){
   if(!nearest)return null;
   nearest.x=Math.max(-7.5,Math.min(7.5,nearest.x));
   nearest.y=Math.max(1.3,Math.min(8,nearest.y));nearest.z=-3.2;
+  // Enter a side column with its category header in view, even when the pointer
+  // starts over a lower cubby. Further drags can inspect each shelf freely.
+  if(Math.abs(nearest.x)>6.3&&nearest.y<6.8)nearest.y=3.55;
   return nearest;
 }
 
 // Shift only the close-up endpoint so zooming out still returns through the
-// original cabinet overview. Dragging follows the row, not the room's orbit.
-export function panCabinetPath(path,progress,detail,dx,height,fov){
+// original cabinet overview. Dragging follows the shelves, not the room's orbit.
+export function panCabinetPath(path,progress,detail,dx,height,fov,dy=0){
   const pose=cameraPose(path,progress),origin=cameraPose(path,0),destination=cameraPose(path,1);
   const span=2*pose.position.distanceTo(pose.target)*Math.tan(fov*Math.PI/360);
   const next=detail.clone();
-  next.x=Math.max(-7.5,Math.min(7.5,detail.x-dx/Math.max(1,height)*span/Math.max(.1,progress)));
-  const shift=next.x-detail.x;
-  destination.target.x+=shift;destination.position.x+=shift;
+  const scale=span/Math.max(1,height)/Math.max(.1,progress);
+  next.x=Math.max(-7.5,Math.min(7.5,detail.x-dx*scale));
+  next.y=Math.max(1.3,Math.min(8,detail.y+dy*scale));
+  const shift=next.clone().sub(detail);
+  destination.target.add(shift);destination.position.add(shift);
   return {detail:next,path:cameraPath(origin.position,origin.target,destination.position,destination.target)};
 }
 
 // Preserve the room's horizontal framing in portrait without backing through a wall.
-export function roomFov(aspect){return 2*Math.atan(Math.tan(19*Math.PI/180)*Math.max(1,.95/aspect))*180/Math.PI;}
+export function roomFov(aspect){return Math.min(62,2*Math.atan(Math.tan(19*Math.PI/180)*Math.max(1,.95/aspect))*180/Math.PI);}
+
+// Portrait starts at the desk, instead of fitting the entire floor and ceiling.
+// Side objects remain reachable by looking around, tapping or pinching.
+export function roomHome(aspect){
+ const portrait=aspect<.8;
+ const target=new Vector3(...(portrait?[0,2.7,-1]:[-.5,1.1,1.2]));
+ const position=portrait?new Vector3(3.4,7.8,18.5):new Vector3(12.5,11.4,27.3).sub(target).multiplyScalar(Math.max(1,1.45/aspect)).add(target);
+ containCamera(position,target);return {position,target};
+}
 
 export function focusDestination(area,aspect,screen,detail=null,fov=38){
   const halfFov=Math.tan(fov*Math.PI/360);
   let target,position;
   if(area==='cabinet'&&detail){
     target=detail.clone();
-    position=target.clone().add(new Vector3(0,.6,Math.max(7.5,6/(2*halfFov*aspect*.9))));
+    const sideColumn=Math.abs(detail.x)>6.3&&detail.y<6.8;
+    position=target.clone().add(new Vector3(0,.6,Math.max(7.5,6/(2*halfFov*aspect*.9),sideColumn?7.2/(2*halfFov*.86):0)));
   }else if(area==='screen'){
     target=screen.clone();
     position=target.clone().add(new Vector3(0,.08,Math.max(7.7,4.96/(2*halfFov*aspect*.89))));

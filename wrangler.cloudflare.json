@@ -1,6 +1,6 @@
 {
   "name": "openaigames",
-  "account_id": "798cc288096e1beac5cb1611654fdf4a",
+  "account_id": "1df8f334169206788cc480fb569f1761",
   "main": "dist/server/index.js",
   "compatibility_date": "2026-05-15",
   "workers_dev": true,
@@ -11,24 +11,37 @@
     "run_worker_first": [
       "/api/*",
       "/internal/*",
-      "/catalog.json"
+      "/catalog.json",
+      "/admin",
+      "/admin/",
+      "/static/admin",
+      "/static/admin/",
+      "/static/admin/index.html"
     ]
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "openaigames-board",
-      "database_id": "6f976c8d-3b2d-489a-8608-de0b01d2a495",
+      "database_id": "329feb8e-3f08-40f3-bf64-ee2c9fc5639b",
       "migrations_dir": "drizzle"
     },
     {
       "binding": "CATALOG",
       "database_name": "openaigames-catalog",
-      "database_id": "cb9dae75-dcd8-4a62-910b-fb299387a06a",
+      "database_id": "678c02e9-b7f7-4c32-b937-d6e1daa31f64",
       "migrations_dir": "catalog-migrations"
     }
   ],
   "vars": {
-    "CATALOG_MODE": "production"
-  }
+    "CATALOG_MODE": "production",
+    "ADMIN_ORIGIN": "https://openaigames.org",
+    "GITHUB_CLIENT_ID": "Ov23liQPBUoUNQGkyMsC"
+  },
+  "routes": [
+    {
+      "pattern": "openaigames.org",
+      "custom_domain": true
+    }
+  ]
 }

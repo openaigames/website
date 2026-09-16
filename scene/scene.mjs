@@ -7,14 +7,16 @@ import { cable } from './models.mjs';
 import { nightRoom } from './night-room.mjs';
 import { cabinetLayout } from '../lib/cabinet-layout.mjs';
 import { containCamera, cameraPath, cameraPose, overviewPath, syncOrbitPose } from './camera-motion.mjs';
-import { focusAreaForRay, focusDestination, cabinetDetailForRay, panCabinetPath, canScrollList, wheelGoal, resizeFocusPath, roomFov } from './room-focus.mjs';
+import { focusAreaForRay, focusDestination, cabinetDetailForRay, panCabinetPath, canScrollList, wheelGoal, resizeFocusPath, roomFov, roomHome } from './room-focus.mjs';
 import { bindRoomTouch } from './touch-navigation.mjs';
 import { bindCabinetDrag } from './cabinet-navigation.mjs';
+import { panRoomPose } from './room-pan.mjs';
 const root=document.createElement('section');root.id='three-room';root.setAttribute('aria-label','OpenAIGames 三维游戏空间');
 root.innerHTML=`<div id="three-canvas"></div><div id="three-html"></div><div class="three-loading" role="status"><strong>OpenAIGames</strong><span>正在搬来你的游戏机…</span><i></i></div><div class="scene-tip" id="scene-tip">拖动，转一转。点一张卡带，开始玩。</div><div class="three-footer"><button data-action="submit-demo">＋ 投稿游戏</button><button id="scene-library">选卡</button><a href="https://github.com/openaigames/community" target="_blank" rel="noopener">逛社区 ↗</a><button data-action="sound" aria-label="开关按键音">音效</button></div><button id="exit-immersive" class="exit-immersive">↙ 回到游戏机</button><div class="three-controls" id="three-controls"><button data-action="eject">退卡</button><button data-action="start">START</button><button data-action="edit">一起改</button><button data-action="feedback">反馈</button></div>`;
 let roomLayout,cabinetPage=0,approachPath=null,approachProgress=0,approachGoal=0;
 let approachArea='screen',approachDetail=null,wheelPointer=null,approachHistory=[];
 let touchNavigation,cabinetNavigation,touchCabinetPan=false,lastZoomAt=0,cabinetDetailReady=false;
+let roomPanActive=false,roomPanning=false,lastViewport=null;
 let renderer,cssRenderer,scene,camera,orbit,screenObject,tv,consoleMesh,pad,rackCards=[],liveCart,manual;
 let dirty=true,focus=false,tween=null,drag=null,down=null,hover=null,held=null,latest=null,booted=false,disposed=false,inserting=false,insertGeneration=0,hoverCard=null,immersive=false,fullPending=false,fullRect=null,fullscreenAnimation=null,cardSource=null,cardArt=null,rackKey="",fullOriginalTransform="",inspection=null,inspectionId=null,inspectionProgress=0;
 const loader=new GLTFLoader(),texLoader=new T.TextureLoader(),raycaster=new T.Raycaster(),pointer=new T.Vector2();
@@ -75,6 +77,7 @@ function refreshRack(){
  dirty=true;renderer.shadowMap.needsUpdate=true;
 }
 function roomAction(action){
+ if(action==='music'){window.OpenAIGamesMusic?.open();return;}
  if(action==='github'){window.open('https://github.com/openaigames','_blank','noopener,noreferrer');return;}
  if(action==='search'){window.OpenAIGamesSite.open('games','',{search:true});return;}
  if(action==='previous'||action==='next'){const layout=cabinetLayout(host().state().projects.filter(p=>p.current_version),cabinetPage);cabinetPage=(cabinetPage+(action==='next'?1:-1)+layout.pages)%layout.pages;refreshRack();return;}
@@ -141,16 +144,23 @@ function aboveCartridgeSlot(){const slot=cartridgeSlot();slot.y=3;return slot;}
 function locateCard(id){return rackCards.find(c=>c.userData.project.id===id);}
 function hint(text){$('#scene-tip').textContent=text;}
 function readSize(){
- touchNavigation?.reset();cabinetNavigation?.reset();
- const width=innerWidth,height=innerHeight;renderer.setSize(width,height);cssRenderer.setSize(width,height);camera.aspect=width/height;camera.fov=roomFov(camera.aspect);camera.updateProjectionMatrix();if(!booted)return;
- homeCamera.set(12.5,11.4,27.3).sub(homeTarget).multiplyScalar(Math.max(1,1.45/camera.aspect)).add(homeTarget);containCamera(homeCamera,homeTarget);
- if(immersive){dirty=true;return;}
+ const width=innerWidth,height=innerHeight;
+ if(lastViewport?.width===width&&lastViewport.height===height)return;
+ // A software keyboard must not reset the room behind a form.
+ if(lastViewport?.width===width&&document.activeElement?.matches('input,textarea,select'))return;
+ const first=!lastViewport,atHome=!approachPath&&!tween&&camera.position.distanceTo(homeCamera)<.1&&orbit.target.distanceTo(homeTarget)<.1;
+ lastViewport={width,height};touchNavigation?.reset();cabinetNavigation?.reset();
+ renderer.setSize(width,height);cssRenderer.setSize(width,height);camera.aspect=width/height;camera.fov=roomFov(camera.aspect);camera.updateProjectionMatrix();
+ const home=roomHome(camera.aspect);homeCamera.copy(home.position);homeTarget.copy(home.target);
+ if(!booted||immersive){dirty=true;return;}
  if(approachPath){
   const screen=new T.Vector3();screenObject.getWorldPosition(screen);
   approachPath=resizeFocusPath(approachPath,approachArea,camera.aspect,screen,approachDetail,camera.fov);
   const pose=cameraPose(approachPath,approachProgress);camera.position.copy(pose.position);orbit.target.copy(pose.target);camera.lookAt(orbit.target);
   if(tween)startCameraTravel(approachPath,approachProgress,approachGoal,'approach',120);
- }else cameraTo('overview');dirty=true;
+ }else if(first||atHome)cameraTo('overview',first?650:240);
+ else{containCamera(camera.position,orbit.target);camera.lookAt(orbit.target);}
+ dirty=true;
 }
 function setScreenFocus(value){
  focus=value;root.classList.toggle('screen-view',focus);screenObject.element.style.pointerEvents=focus?'auto':'none';
@@ -174,7 +184,7 @@ function cameraTo(mode,duration=1100){
  if(mode==='screen'){
   prepareApproach();approachGoal=1;startCameraTravel(approachPath,approachProgress,1,'approach');
  }else{
-  fullPending=false;approachPath=null;approachDetail=null;approachHistory=[];approachProgress=approachGoal=0;wheelPointer=null;root.dataset.focusArea='room';
+  roomPanActive=false;fullPending=false;approachPath=null;approachDetail=null;approachHistory=[];approachProgress=approachGoal=0;wheelPointer=null;root.dataset.focusArea='room';
   syncOrbitPose(orbit);
   const path=overviewPath(camera.position,orbit.target,homeCamera,homeTarget);
   if(path)startCameraTravel(path,0,1,'overview',duration);
@@ -182,6 +192,7 @@ function cameraTo(mode,duration=1100){
  }
 }
 function wheelApproach(event){
+ if(event.target.closest?.('.room-music,.music-launcher'))return;
  if(!booted||disposed||immersive||inserting||drag||document.body.classList.contains('site-open')||$('#dialog').open||event.ctrlKey)return;
  const horizontal=event.deltaX||(event.shiftKey?event.deltaY:0);
  if(isCabinetCloseup()&&Math.abs(horizontal)>Math.abs(event.shiftKey?0:event.deltaY)){
@@ -194,6 +205,7 @@ function wheelApproach(event){
  zoomRoom(delta,event);
 }
 function zoomRoom(delta,event){
+ root.classList.add('navigation-used');
  const now=performance.now();if(now-lastZoomAt>220)cabinetDetailReady=approachArea==='cabinet'&&approachProgress>=.985;lastZoomAt=now;
  if(delta>0&&!approachPath){
   if(tween?.mode!=='overview')cameraTo('overview',200);
@@ -222,47 +234,64 @@ function zoomRoom(delta,event){
 }
 
 function isCabinetCloseup(){return Boolean(approachPath&&approachArea==='cabinet'&&approachDetail&&approachProgress>.1&&!immersive&&!inserting);}
+function wantsRoomPan(){return roomPanActive||approachProgress>.1;}
+function beginRoomPan(){
+ roomPanning=true;
+ if(isCabinetCloseup()){beginCabinetPan();return;}
+ tween=null;approachPath=null;approachDetail=null;approachHistory=[];approachProgress=approachGoal=0;wheelPointer=null;
+ roomPanActive=true;
+ setScreenFocus(false);setCardHover(null);clearInspection();syncOrbitPose(orbit);orbit.enabled=false;
+}
+function panRoom(dx,dy){
+ if(isCabinetCloseup()){panCabinet(dx,dy);return;}
+ const pose=panRoomPose(camera.position,orbit.target,dx,dy,innerHeight,camera.fov);
+ camera.position.copy(pose.position);orbit.target.copy(pose.target);camera.lookAt(orbit.target);dirty=true;
+}
 function beginCabinetPan(){
  tween=null;approachGoal=approachProgress;wheelPointer=null;setCardHover(null);clearInspection();syncOrbitPose(orbit);orbit.enabled=false;
 }
-function panCabinet(dx){
+function panCabinet(dx,dy=0){
  if(!isCabinetCloseup())return;
- const next=panCabinetPath(approachPath,approachProgress,approachDetail,dx,innerHeight,camera.fov);
+ const next=panCabinetPath(approachPath,approachProgress,approachDetail,dx,innerHeight,camera.fov,dy);
  approachPath=next.path;approachDetail=next.detail;
  const pose=cameraPose(approachPath,approachProgress);camera.position.copy(pose.position);orbit.target.copy(pose.target);camera.lookAt(orbit.target);dirty=true;
 }
 function enableTouchNavigation(){
- const guide=document.createElement('div');guide.className='touch-guide';guide.textContent='单指转动 · 双指缩放 · 点卡带开玩';root.append(guide);
+ const guide=document.createElement('div');guide.className='room-entry-guide';guide.innerHTML='<span class="entry-mouse">滑动滚轮进入</span><span class="entry-touch">双指缩放进入 · 单指拖动环视</span>';root.append(guide);
+ root.addEventListener('pointerdown',()=>root.classList.add('navigation-used'),{once:true});
  touchNavigation=bindRoomTouch(root,{
-  canStart:event=>booted&&!disposed&&!immersive&&!inserting&&!document.body.classList.contains('site-open')&&!$('#dialog').open&&!event.target.closest?.('input,textarea,select'),
+  canStart:event=>booted&&!disposed&&!immersive&&!inserting&&!document.body.classList.contains('site-open')&&!$('#dialog').open&&Boolean(event.target.closest?.('#three-canvas,#screen'))&&!event.target.closest?.('input,textarea,select'),
   pinchStart:()=>{touchCabinetPan=false;lastZoomAt=0;wheelPointer=null;setCardHover(null);syncOrbitPose(orbit);root.classList.add('touch-used');},
+  panStart:()=>{touchCabinetPan=true;beginRoomPan();},
+  pan:({dx,dy})=>panRoom(dx,dy),
   zoom:(delta,anchor)=>zoomRoom(delta,{clientX:anchor.x,clientY:anchor.y,target:root}),
   dragStart:point=>{
    root.classList.add('touch-used');
    if(point.target.closest?.('#screen'))return;
-   touchCabinetPan=isCabinetCloseup();if(touchCabinetPan){beginCabinetPan();return;}
+   touchCabinetPan=wantsRoomPan();if(touchCabinetPan){beginRoomPan();return;}
    tween=null;approachPath=null;approachDetail=null;approachHistory=[];approachProgress=approachGoal=0;wheelPointer=null;
    root.dataset.focusArea='room';setScreenFocus(false);syncOrbitPose(orbit);orbit.enabled=false;
   },
   drag:({dx,dy,target})=>{
    if(target.closest?.('#screen')){const list=target.closest('.game-list');if(list)list.scrollTop-=dy;return;}
-   if(touchCabinetPan){panCabinet(dx);return;}
+   if(touchCabinetPan){panRoom(dx,dy);return;}
    orbit.rotateLeft(dx/innerHeight*Math.PI*1.4);orbit.rotateUp(dy/innerHeight*Math.PI*1.4);
    containCamera(camera.position,orbit.target);camera.lookAt(orbit.target);dirty=true;
   },
   tap:point=>{
    const button=point.target.closest?.('#screen button');
    if(button){button.click();return;}
-   perform(getHit({clientX:point.x,clientY:point.y}));
+   perform(touchHit(point));
    if(held){host()?.bridge('keyup',held);held=null;}
   },
-  end:()=>{touchCabinetPan=false;orbit.enabled=!immersive&&!focus&&!tween;}
+  end:()=>{touchCabinetPan=false;roomPanning=false;orbit.enabled=!immersive&&!focus&&!tween;}
  });
  cabinetNavigation=bindCabinetDrag(root,{
-  active:()=>booted&&!disposed&&isCabinetCloseup()&&!document.body.classList.contains('site-open')&&!$('#dialog').open,
-  begin:beginCabinetPan,pan:panCabinet,tap:event=>perform(getHit(event)),
-  end:()=>{orbit.enabled=!immersive&&!focus&&!tween;}
+  active:event=>booted&&!disposed&&!immersive&&!inserting&&(wantsRoomPan()||event.button===2||event.shiftKey)&&!document.body.classList.contains('site-open')&&!$('#dialog').open,
+  begin:beginRoomPan,pan:panRoom,tap:event=>perform(getHit(event)),
+  end:()=>{roomPanning=false;orbit.enabled=!immersive&&!focus&&!tween;}
  });
+ renderer.domElement.addEventListener('contextmenu',event=>event.preventDefault());
 }
 function pressMesh(m){if(!m)return;const y=m.position.y;animations.push({start:performance.now(),duration:170,tick:t=>{m.position.y=y-Math.sin(t*Math.PI)*.027;},end:()=>m.position.y=y});dirty=true;}
 async function perform(m){try{if(!host()||!m)return;const d=m.userData;if(d.roomAction){roomAction(d.roomAction);return;}if(d.card){await insert(d.card,hitCard(m));return;}if(d.screen){cameraTo('screen');return;}if(d.manual){host().action('manual');return;}if(d.direction){if(latest?.route==='game')host().bridge('keydown',d.direction);else host().move(['ArrowUp','ArrowLeft'].includes(d.direction)?-1:1);held=d.direction;pressMesh(m);return;}pressMesh(m);if(d.action==='action'){if(latest?.route==='game')host().bridge('action');else host().action('start');}else if(d.action==='eject'||d.action==='back'){host().action('eject');cameraTo('overview');}else{host().action(d.action);if(d.action==='start'&&latest?.power)cameraTo('screen');}}catch(error){host().toast(error.message);}}
@@ -279,6 +308,13 @@ async function insert(id,source){if(inserting)return;const original=source||loca
 }
 function overSlot(e){const p=cartridgeSlot().add(new T.Vector3(0,.14*consoleMesh.scale.x,0)).project(camera);return Math.hypot(e.clientX-(p.x+1)*innerWidth/2,e.clientY-(1-p.y)*innerHeight/2)<Math.min(70,innerWidth*.085);}
 function getHit(e){const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(scene.children,true).find(h=>{for(let o=h.object;o;o=o.parent)if(!o.visible)return false;return h.object.isMesh;});if(!hit)return;const m=hit.object;return activeMeshes.includes(m)||m.userData.inspection?m:undefined;}
+// Nearby hit samples make small physical labels usable with a fingertip.
+function touchHit(point){
+ const center=getHit({clientX:point.x,clientY:point.y});if(center)return center;
+ for(const [dx,dy] of [[-12,0],[12,0],[0,-12],[0,12],[-18,-10],[18,-10],[-18,10],[18,10]]){
+  const hit=getHit({clientX:point.x+dx,clientY:point.y+dy});if(hit)return hit;
+ }
+}
 function sync(){if(!host()||!booted)return;const previous=latest;latest=host().state();if(previous&&previous.route!==latest.route&&!inserting)latest.route==='game'?fullscreen():cameraTo('overview');$('#three-controls').classList.toggle('show',focus&&latest.route==='game');const led=tv.getObjectByName('power_light');led.material.emissiveIntensity=latest.power?1.7:0;led.material.color.set(latest.power?'#ed6140':'#55382b');
  if(!latest.power&&inserting){inserting=false;insertGeneration++;}
  if((latest.route!=='game'||!latest.power)&&liveCart&&!inserting){scene.remove(liveCart);liveCart=null;rackCards.forEach(c=>c.visible=true);}
@@ -290,10 +326,10 @@ async function init(){
  document.body.appendChild(root);root.querySelector('#three-canvas').appendChild(renderer.domElement);renderer.domElement.tabIndex=-1;document.body.classList.add('is-3d');
  scene=new T.Scene();scene.background=new T.Color('#050c1b');scene.fog=new T.Fog('#050c1b',38,75);
  camera=new T.PerspectiveCamera(38,innerWidth/innerHeight,.1,100);camera.position.copy(homeCamera);
- const mobile=matchMedia('(pointer:coarse)').matches;
+ const mobile=matchMedia('(pointer:coarse)').matches||innerWidth<700;
  renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.25:1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.needsUpdate=true;renderer.shadowMap.type=T.PCFShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
  const pmrem=new T.PMREMGenerator(renderer);scene.environment=pmrem.fromScene(new RoomEnvironment(),.035).texture;scene.environmentIntensity=.35;
- const key=new T.DirectionalLight('#87adff',1.8);key.position.set(-5,11,8);key.castShadow=true;key.shadow.mapSize.set(2048,2048);key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;key.shadow.normalBias=.015;key.shadow.bias=-.0001;scene.add(key);
+ const key=new T.DirectionalLight('#87adff',1.8);key.position.set(-5,11,8);key.castShadow=true;key.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);key.shadow.camera.left=-10;key.shadow.camera.right=10;key.shadow.camera.top=10;key.shadow.camera.bottom=-10;key.shadow.normalBias=.015;key.shadow.bias=-.0001;scene.add(key);
  const fill=new T.DirectionalLight('#ffb276',1.05);fill.position.set(6,5,-4);scene.add(fill);scene.add(new T.HemisphereLight('#8ebfff','#101b38',.85));
  orbit=new OrbitControls(camera,renderer.domElement);orbit.target.copy(homeTarget);orbit.enableDamping=true;orbit.dampingFactor=.09;orbit.minDistance=8.3;orbit.maxDistance=44;orbit.minAzimuthAngle=-.5;orbit.maxAzimuthAngle=.9;orbit.maxPolarAngle=Math.PI*.46;orbit.minPolarAngle=.18;orbit.enablePan=false;orbit.enableZoom=false;orbit.addEventListener('change',()=>dirty=true);
  cssRenderer=new CSS3DRenderer();root.querySelector('#three-html').appendChild(cssRenderer.domElement);cssRenderer.domElement.style.pointerEvents='none';
@@ -323,7 +359,7 @@ async function init(){
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();fallback('三维显示暂时不可用，请重新打开房间。');});
  booted=true;enableTouchNavigation();readSize();sync();root.querySelector('.three-loading').remove();
  if(host().state().route==='game')fullscreen();
- function frame(){if(disposed)return;requestAnimationFrame(frame);if(document.hidden||document.body.classList.contains('site-open'))return;let moving=false;const now=performance.now();if(!immersive&&!tween&&!focus&&!approachProgress){orbit.update();containCamera(camera.position,orbit.target);camera.lookAt(orbit.target);}
+ function frame(){if(disposed)return;requestAnimationFrame(frame);if(document.hidden||immersive||document.body.classList.contains('site-open'))return;let moving=false;const now=performance.now();if(!roomPanning&&!immersive&&!tween&&!focus&&!approachProgress){orbit.update();containCamera(camera.position,orbit.target);camera.lookAt(orbit.target);}
   if(tween){
    const travel=tween,t=travel.duration?Math.min(1,(now-travel.start)/travel.duration):1,e=1-Math.pow(1-t,3),progress=T.MathUtils.lerp(travel.from,travel.to,e);
    const pose=cameraPose(travel.path,progress);orbit.target.copy(pose.target);camera.position.copy(pose.position);camera.lookAt(orbit.target);

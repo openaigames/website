@@ -3,10 +3,15 @@ import { json } from './board-http.js';
 import { relayBoard } from './board-relay.js';
 import { catalog, publishCatalog } from './catalog.js';
 import { submissions } from './submissions.js';
+import { admin, adminPage } from './admin.js';
+import { music } from './music.js';
 export default {
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
     try {
+      if (['/admin','/admin/','/static/admin','/static/admin/','/static/admin/index.html'].includes(path)) return await adminPage(request, env);
+      if (path.startsWith('/api/admin/') || path.startsWith('/api/auth/')) return await admin(request, env);
+      if (path.startsWith('/api/music/')) return await music(request);
       if (path === '/api/submissions') return await submissions(request, env, ctx);
       if (path === '/api/catalog' || path === '/catalog.json') return await catalog(request, env);
       if (path === '/internal/catalog') return await publishCatalog(request, env);
@@ -23,7 +28,7 @@ export default {
       return await env.ASSETS.fetch(request);
     } catch (error) {
       console.error('request failed', path, error.message);
-      return json({ error: path === '/api/submissions' ? '投稿暂时连接不上，请稍后重试。' : path === '/api/catalog' || path === '/catalog.json' ? '游戏目录暂时连接不上，请稍后重试。' : path.startsWith('/api/') ? '留言板暂时连接不上，内容还在，请稍后重试。' : '页面暂时无法打开，请稍后重试。' }, 503);
+      return json({ error: (path.startsWith('/api/admin/') || path.startsWith('/api/auth/')) ? '审核后台暂时连接不上，请稍后重试。' : path === '/api/submissions' ? '投稿暂时连接不上，请稍后重试。' : path === '/api/catalog' || path === '/catalog.json' ? '游戏目录暂时连接不上，请稍后重试。' : path.startsWith('/api/') ? '留言板暂时连接不上，内容还在，请稍后重试。' : '页面暂时无法打开，请稍后重试。' }, 503);
     }
   }
 };

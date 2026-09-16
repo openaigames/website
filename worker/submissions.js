@@ -13,7 +13,7 @@ export function normalizeSubmission(input) {
   }
   let url;
   try { url = new URL(input.url); } catch { throw Error('请填写完整的 HTTPS 试玩链接。'); }
-  if (typeof input.url !== 'string' || input.url.length > 2048 || /[\s<>"'\\]/.test(input.url) || url.protocol !== 'https:' || url.username || url.password || url.port || !url.hostname.includes('.') || /^[\d.]+$/.test(url.hostname) || url.hostname.includes(':') || /\.(local|localhost|internal|test|invalid|example|arpa)$/.test(url.hostname) || ['openaigames.lens-frontier.workers.dev','openaigames-preview.lens-frontier.workers.dev','openaigames-demo.leonliuzx.chatgpt.site'].includes(url.hostname)) throw Error('请填写游戏原站的公开 HTTPS 链接。');
+  if (typeof input.url !== 'string' || input.url.length > 2048 || /[\s<>"'\\]/.test(input.url) || url.protocol !== 'https:' || url.username || url.password || url.port || !url.hostname.includes('.') || /^[\d.]+$/.test(url.hostname) || url.hostname.includes(':') || /\.(local|localhost|internal|test|invalid|example|arpa)$/.test(url.hostname) || ['openaigames.org','preview.openaigames.org','openaigames.3325932294.workers.dev','openaigames-preview.3325932294.workers.dev','openaigames.lens-frontier.workers.dev','openaigames-preview.lens-frontier.workers.dev','openaigames-demo.leonliuzx.chatgpt.site'].includes(url.hostname)) throw Error('请填写游戏原站的公开 HTTPS 链接。');
   result.url = url.href;
   if (!['creator','recommend'].includes(input.relation)) throw Error('请选择自己的作品或推荐的作品。');
   result.relation = input.relation;
@@ -32,12 +32,12 @@ export async function submissions(request, env, ctx) {
     const id = url.searchParams.get('id');
     if (id !== null) {
       if (!/^[1-9]\d{0,14}$/.test(id)) return json({error:'查询条件无效。'},400);
-      const entry=await db.prepare(`SELECT ${columns} FROM game_submissions WHERE id = ? AND status = 'pending'`).bind(Number(id)).first();
+      const entry=await db.prepare(`SELECT ${columns} FROM game_submissions WHERE id = ? AND status = 'approved'`).bind(Number(id)).first();
       return entry ? json({entry}) : json({error:'这款试玩暂时没有找到。'},404);
     }
     const before = url.searchParams.get('before'), query = (url.searchParams.get('q') || '').trim();
     if ((before !== null && !/^[1-9]\d{0,14}$/.test(before)) || query.length > 100) return json({error:'查询条件无效。'},400);
-    const result = await db.prepare(`SELECT ${columns} FROM game_submissions WHERE status = 'pending' AND id < ? AND instr(lower(title || ' ' || description), lower(?)) > 0 ORDER BY id DESC LIMIT 21`).bind(before ? Number(before) : Number.MAX_SAFE_INTEGER, query).all();
+    const result = await db.prepare(`SELECT ${columns} FROM game_submissions WHERE status = 'approved' AND id < ? AND instr(lower(title || ' ' || description), lower(?)) > 0 ORDER BY id DESC LIMIT 21`).bind(before ? Number(before) : Number.MAX_SAFE_INTEGER, query).all();
     const entries = result.results.slice(0,20);
     return json({entries, next: result.results.length > 20 ? entries.at(-1).id : null});
   }
@@ -48,7 +48,7 @@ export async function submissions(request, env, ctx) {
   const requestId = input.requestId;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId || '') || input.website || input.public !== true) return json({error:'请确认公开展示投稿后再提交。'},400);
   const prior = await db.prepare(`SELECT ${columns}, status FROM game_submissions WHERE request_id = ?`).bind(requestId).first();
-  if (prior) return prior.status === 'pending' && same(prior,data) ? json({entry:publicEntry(prior), duplicate:true}) : json({error:'这次投稿已有记录，请重新填写后提交。'},409);
+  if (prior) return same(prior,data) ? json({entry:{id:prior.id,title:prior.title,status:prior.status}, duplicate:true}) : json({error:'这次投稿已有记录，请重新填写后提交。'},409);
   const exists = await db.prepare('SELECT id FROM game_submissions WHERE url = ?').bind(data.url).first();
   if (exists) return json({error:'这个试玩链接已经提交过了，无需重复投稿。',id:exists.id},409);
   const now = Date.now(), key = await clientKey(request, env, now);
@@ -65,6 +65,6 @@ export async function submissions(request, env, ctx) {
   }
   if (!same(entry,data)) return json({error:'这次投稿已有记录，请重新填写后提交。'},409);
   ctx.waitUntil(db.prepare('DELETE FROM submission_limits WHERE next_at < ?').bind(now-86400000).run().catch(error=>console.error('submission cleanup',error.message)));
-  return json({entry},201);
+  return json({entry:{id:entry.id,title:entry.title,status:'pending'}},201);
 }
 function publicEntry(row) { return Object.fromEntries(columns.split(', ').map(key => [key,row[key]])); }
