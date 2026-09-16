@@ -11,6 +11,9 @@ import { focusAreaForRay, focusDestination, cabinetDetailForRay, panCabinetPath,
 import { bindRoomTouch } from './touch-navigation.mjs';
 import { bindCabinetDrag } from './cabinet-navigation.mjs';
 import { panRoomPose } from './room-pan.mjs';
+import { animationClock } from './animation-clock.mjs';
+import { cartridgePreview } from './cartridge-preview.mjs';
+const motionClock=animationClock();
 const root=document.createElement('section');root.id='three-room';root.setAttribute('aria-label','OpenAIGames 三维游戏空间');
 root.innerHTML=`<div id="three-canvas"></div><div id="three-html"></div><div class="three-loading" role="status"><strong>OpenAIGames</strong><span>正在搬来你的游戏机…</span><i></i></div><div class="scene-tip" id="scene-tip">拖动，转一转。点一张卡带，开始玩。</div><div class="three-footer"><button data-action="submit-demo">＋ 投稿游戏</button><button id="scene-library">选卡</button><a href="https://github.com/openaigames/community" target="_blank" rel="noopener">逛社区 ↗</a><button data-action="sound" aria-label="开关按键音">音效</button></div><button id="exit-immersive" class="exit-immersive">↙ 回到游戏机</button><div class="three-controls" id="three-controls"><button data-action="eject">退卡</button><button data-action="start">START</button><button data-action="edit">一起改</button><button data-action="feedback">反馈</button></div>`;
 let roomLayout,cabinetPage=0,approachPath=null,approachProgress=0,approachGoal=0;
@@ -21,6 +24,7 @@ let renderer,cssRenderer,scene,camera,orbit,screenObject,tv,consoleMesh,pad,rack
 let dirty=true,focus=false,tween=null,drag=null,down=null,hover=null,held=null,latest=null,booted=false,disposed=false,inserting=false,insertGeneration=0,hoverCard=null,immersive=false,fullPending=false,fullRect=null,fullscreenAnimation=null,cardSource=null,cardArt=null,rackKey="",fullOriginalTransform="",inspection=null,inspectionId=null,inspectionProgress=0;
 const loader=new GLTFLoader(),texLoader=new T.TextureLoader(),raycaster=new T.Raycaster(),pointer=new T.Vector2();
 const activeMeshes=[],animations=[];
+let inspectionFrame=null;
 const homeTarget=new T.Vector3(-.5,1.1,1.2),homeCamera=new T.Vector3(12.5,11.4,27.3);
 const host=()=>window.OpenAIGamesHost;
 const $=s=>document.querySelector(s);
@@ -67,13 +71,13 @@ function refreshRack(){
  let recent=[];try{recent=JSON.parse(localStorage.getItem('openaigames-recent')||'[]');}catch{}if(!Array.isArray(recent))recent=[];
  const picks=[...new Set([...all.filter(p=>p.featured).map(p=>p.id),...recent])].map(id=>all.find(p=>p.id===id)).filter(Boolean).slice(0,2);
  const layout=cabinetLayout(all,cabinetPage);cabinetPage=layout.page;
- const key=(window.OpenAIGamesI18n?.locale||'zh')+':'+all.map(p=>p.id+':'+p.title+':'+p.category+':'+p.cover_url+':'+p.development_stage).join('|')+':'+cabinetPage+':'+picks.map(p=>p.id).join('|');if(key===rackKey)return;
+ const key=(window.OpenAIGamesI18n?.locale||'zh')+':'+all.map(p=>p.id+':'+p.title+':'+p.category+':'+p.cover_url+':'+p.development_stage+':'+p.featured).join('|')+':'+cabinetPage+':'+picks.map(p=>p.id).join('|');if(key===rackKey)return;
  rackKey=key;hoverCard=null;hover=null;clearInspection();
  for(const c of rackCards){scene.remove(c);c.traverse(o=>{const i=activeMeshes.indexOf(o);if(i>=0)activeMeshes.splice(i,1);if(o.isMesh&&['cart_art','cart_title','cartridge_spine','cart_status'].includes(o.name)){o.material.map?.dispose();o.material.dispose();if(['cartridge_spine','cart_status'].includes(o.name))o.geometry.dispose();}if(o.name==='cart_shell')o.material.dispose();});}
- const placements=[...layout.shelves.flatMap((shelf,side)=>shelf.games.map((p,i)=>({p,position:roomLayout.cabinetPosition(side,i),rotation:new T.Euler(0,Math.PI/2,0)}))),...layout.upper.map((p,i)=>({p,position:roomLayout.upperPosition(i),rotation:new T.Euler(0,0,0)})),...picks.map((p,i)=>({p,position:roomLayout.deskPosition(i),rotation:new T.Euler(-.2,-.24,0)}))];
+ const placements=[...layout.shelves.flatMap((shelf,side)=>shelf.games.map((p,i)=>({p,position:roomLayout.cabinetPosition(side,i),rotation:new T.Euler(0,Math.PI/2,0)}))),...layout.upper.map((p,i)=>({p,position:roomLayout.upperPosition(layout.upperSlots[i]),rotation:new T.Euler(0,0,0)})),...picks.map((p,i)=>({p,position:roomLayout.deskPosition(i),rotation:new T.Euler(-.2,-.24,0)}))];
  rackCards=placements.map(({p,position,rotation})=>{const card=cardSource.clone(true);sceneCard(card,p);card.position.copy(position);card.rotation.copy(rotation);card.scale.setScalar(.93);card.userData.home=card.position.clone();card.userData.homeQ=card.quaternion.clone();scene.add(card);registerCart(card);return card;});
  roomLayout.updateCabinet(layout);
- for(const button of root.querySelectorAll('[data-room-action="previous"],[data-room-action="next"]'))button.disabled=layout.pages===1;
+ for(const button of root.querySelectorAll('[data-room-action="previous"],[data-room-action="next"]')){button.disabled=layout.pages===1;button.hidden=layout.pages===1;}
  dirty=true;renderer.shadowMap.needsUpdate=true;
 }
 function roomAction(action){
@@ -89,12 +93,22 @@ function mountRoomActions(){
  navigation.addEventListener('click',event=>{const button=event.target.closest('[data-room-action]');if(button)roomAction(button.dataset.roomAction);});
 }
 function hitCard(mesh){for(let o=mesh;o;o=o.parent)if(o.userData.project)return o;return locateCard(mesh?.userData.card);}
+function previewFrame(){
+ const point=new T.Vector3(),box=new T.Box3();
+ const occupied=rackCards.filter(card=>card.visible).map(card=>{
+  box.setFromObject(card);const corners=[];
+  for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){point.set(x,y,z).project(camera);corners.push({x:(point.x+1)*innerWidth/2,y:(1-point.y)*innerHeight/2});}
+  return {left:Math.min(...corners.map(p=>p.x)),right:Math.max(...corners.map(p=>p.x)),top:Math.min(...corners.map(p=>p.y)),bottom:Math.max(...corners.map(p=>p.y))};
+ });
+ screenObject.getWorldPosition(point).project(camera);
+ return cartridgePreview({width:innerWidth,height:innerHeight,anchor:{x:(point.x+1)*innerWidth/2,y:(1-point.y)*innerHeight/2},occupied});
+}
 function clearInspection(){root.classList.remove('inspecting');if(!inspection)return;scene.remove(inspection);inspection.traverse(o=>{if(o.isMesh)o.material.dispose();});inspection=null;inspectionId=null;inspectionProgress=0;}
 function setCardHover(card){
  if(hoverCard===card)return;hoverCard=card;
- if(card&&!inserting&&!focus&&!isCabinetCloseup()){
-  clearInspection();inspection=card.clone(true);inspectionId=card.userData.project.id;inspectionProgress=0;
-  inspection.traverse(o=>{if(o.isMesh){o.userData={card:inspectionId,inspection:true};o.material=o.material.clone();o.material.transparent=true;o.material.opacity=0;o.castShadow=false;o.receiveShadow=false;}});scene.add(inspection);root.classList.add('inspecting');
+ if(card&&!inserting&&!focus&&!isCabinetCloseup()&&matchMedia('(hover:hover)').matches){
+  clearInspection();inspectionFrame=previewFrame();if(!inspectionFrame){dirty=true;return;}inspection=card.clone(true);inspectionId=card.userData.project.id;inspectionProgress=0;
+  inspection.traverse(o=>{if(o.isMesh){o.userData={inspection:true};o.raycast=()=>{};o.material=o.material.clone();o.material.transparent=true;o.material.opacity=0;o.castShadow=false;o.receiveShadow=false;}});scene.add(inspection);root.classList.add('inspecting');
  }
  dirty=true;
 }
@@ -108,16 +122,15 @@ function animateCardHover(){
   if(!desired&&inspectionProgress===0){clearInspection();return true;}
   const distance=13,halfHeight=distance*Math.tan(T.MathUtils.degToRad(camera.fov/2));
   const right=new T.Vector3(1,0,0).applyQuaternion(camera.quaternion),up=new T.Vector3(0,1,0).applyQuaternion(camera.quaternion),forward=new T.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-  const mobile=innerWidth<700,desiredWidth=Math.min(265,innerWidth*(mobile?.55:.30));
-  const size=desiredWidth*(2*halfHeight)/(innerHeight*1.63)*( .94+.06*inspectionProgress);
-  inspection.position.copy(camera.position).addScaledVector(forward,distance).addScaledVector(right,(mobile?0:-.68)*halfHeight*camera.aspect).addScaledVector(up,(mobile?.55:.14)*halfHeight-.74*size-(1-inspectionProgress)*.18);
+  const size=inspectionFrame.size*(2*halfHeight)/(innerHeight*1.8)*(.94+.06*inspectionProgress);
+  inspection.position.copy(camera.position).addScaledVector(forward,distance).addScaledVector(right,(inspectionFrame.x/innerWidth*2-1)*halfHeight*camera.aspect).addScaledVector(up,(1-inspectionFrame.y/innerHeight*2)*halfHeight-.74*size);
   inspection.quaternion.copy(camera.quaternion);inspection.scale.setScalar(size);inspection.traverse(o=>{if(o.isMesh)o.material.opacity=inspectionProgress;});
  }
  return moving;
 }
 function returnCard(card){
  card.userData.returning=true;card.userData.lift=0;const from=card.position.clone(),home=card.userData.home.clone(),q=card.quaternion.clone(),scale=card.scale.x,above=new T.Vector3(home.x,3,home.z);
- animations.push({start:performance.now(),duration:reduced?0:650,tick:t=>{const a=t<.6?t/.6:(t-.6)/.4,e=a*a*(3-2*a);card.position.lerpVectors(t<.6?from:above,t<.6?above:home,e);card.quaternion.slerpQuaternions(q,card.userData.homeQ,t);card.scale.setScalar(T.MathUtils.lerp(scale,.93,t));},end:()=>{card.userData.returning=false;}});dirty=true;
+ animations.push({start:motionClock.now(),duration:reduced?0:650,tick:t=>{const a=t<.6?t/.6:(t-.6)/.4,e=a*a*(3-2*a);card.position.lerpVectors(t<.6?from:above,t<.6?above:home,e);card.quaternion.slerpQuaternions(q,card.userData.homeQ,t);card.scale.setScalar(T.MathUtils.lerp(scale,.93,t));},end:()=>{card.userData.returning=false;}});dirty=true;
 }
 function fullscreen(){if(immersive)return;fullPending=true;if(!focus||tween)cameraTo('screen');else enterFullscreen();}
 function enterFullscreen(){
@@ -135,8 +148,8 @@ function exitFullscreen(){
 function returnToRoom(){host()?.action('eject');exitFullscreen();cameraTo('overview');hint('拖动环视，滚轮控制远近。');}
 
 window.OpenAIGamesScene={fullscreen,exitFullscreen:returnToRoom,isImmersive:()=>immersive,
- pause:()=>{setCardHover(null);clearInspection();host()?.stop();exitFullscreen();dirty=true;},
- play:id=>{if(!booted||disposed)return false;if(inserting)return true;if(locateCard(id)){insert(id);}else{host().pick(id);host().start();fullscreen();}return true;},
+ prepareOverlay:()=>{setCardHover(null);clearInspection();host()?.bridge('release');motionClock.setPaused(true);dirty=true;},
+ play:id=>{if(!booted||disposed)return false;if(inserting)return true;if(host().state().route==='game'&&host().state().selected===id&&$('#player iframe')){fullscreen();return true;}exitFullscreen();if(locateCard(id)){insert(id);}else{host().pick(id);host().start();fullscreen();}return true;},
  browse:()=>{if(!booted||disposed)return;host()?.stop();setCardHover(null);if(inserting){insertGeneration++;inserting=false;animations.length=0;if(liveCart){scene.remove(liveCart);liveCart=null;}rackCards.forEach(card=>{card.visible=true;card.position.copy(card.userData.home);card.quaternion.copy(card.userData.homeQ);card.userData.returning=false;});}cameraTo('overview');}
 };
 function cartridgeSlot(){return consoleMesh.localToWorld(new T.Vector3(0,.77,-.36));}
@@ -149,6 +162,7 @@ function readSize(){
  // A software keyboard must not reset the room behind a form.
  if(lastViewport?.width===width&&document.activeElement?.matches('input,textarea,select'))return;
  const first=!lastViewport,atHome=!approachPath&&!tween&&camera.position.distanceTo(homeCamera)<.1&&orbit.target.distanceTo(homeTarget)<.1;
+ setCardHover(null);clearInspection();hover=null;
  lastViewport={width,height};touchNavigation?.reset();cabinetNavigation?.reset();
  renderer.setSize(width,height);cssRenderer.setSize(width,height);camera.aspect=width/height;camera.fov=roomFov(camera.aspect);camera.updateProjectionMatrix();
  const home=roomHome(camera.aspect);homeCamera.copy(home.position);homeTarget.copy(home.target);
@@ -168,7 +182,7 @@ function setScreenFocus(value){
 }
 function startCameraTravel(path,from,to,mode,duration=1100){
  setCardHover(null);setScreenFocus(false);orbit.enabled=false;
- tween={path,from,to,mode,start:performance.now(),duration:reduced?0:duration};dirty=true;
+ tween={path,from,to,mode,start:motionClock.now(),duration:reduced?0:duration};dirty=true;
 }
 function prepareApproach(area='screen',detail=null){
  if(approachPath&&approachArea===area&&!detail)return;
@@ -293,12 +307,12 @@ function enableTouchNavigation(){
  });
  renderer.domElement.addEventListener('contextmenu',event=>event.preventDefault());
 }
-function pressMesh(m){if(!m)return;const y=m.position.y;animations.push({start:performance.now(),duration:170,tick:t=>{m.position.y=y-Math.sin(t*Math.PI)*.027;},end:()=>m.position.y=y});dirty=true;}
+function pressMesh(m){if(!m)return;const y=m.position.y;animations.push({start:motionClock.now(),duration:170,tick:t=>{m.position.y=y-Math.sin(t*Math.PI)*.027;},end:()=>m.position.y=y});dirty=true;}
 async function perform(m){try{if(!host()||!m)return;const d=m.userData;if(d.roomAction){roomAction(d.roomAction);return;}if(d.card){await insert(d.card,hitCard(m));return;}if(d.screen){cameraTo('screen');return;}if(d.manual){host().action('manual');return;}if(d.direction){if(latest?.route==='game')host().bridge('keydown',d.direction);else host().move(['ArrowUp','ArrowLeft'].includes(d.direction)?-1:1);held=d.direction;pressMesh(m);return;}pressMesh(m);if(d.action==='action'){if(latest?.route==='game')host().bridge('action');else host().action('start');}else if(d.action==='eject'||d.action==='back'){host().action('eject');cameraTo('overview');}else{host().action(d.action);if(d.action==='start'&&latest?.power)cameraTo('screen');}}catch(error){host().toast(error.message);}}
 async function insert(id,source){if(inserting)return;const original=source||locateCard(id);if(!original||original.userData.returning)return;inserting=true;const generation=++insertGeneration;setCardHover(null);host().pick(id);if(liveCart){scene.remove(liveCart);liveCart=null;}
  const cart=original.clone(true);cart.traverse(o=>{if(o.isMesh)o.userData={};});scene.add(cart);const pose=original;cart.position.copy(pose.position);cart.quaternion.copy(pose.quaternion);cart.scale.copy(pose.scale);clearInspection();original.visible=false;const from=cart.position.clone(),fromQ=cart.quaternion.clone(),to=cartridgeSlot(),toQ=new T.Quaternion(),fromScale=cart.scale.x;liveCart=cart;hint('把这一张，装进游戏机。');let cameraStarted=false;
  const fromShelf=from.z<-2,flightHeight=fromShelf?Math.max(from.y,3.6):Math.max(from.y+1.5,3.6),lifted=new T.Vector3(from.x,fromShelf?from.y:flightHeight,fromShelf?-.6:from.z),aboveSlot=new T.Vector3(to.x,flightHeight,to.z);
- animations.push({start:performance.now(),duration:reduced?0:1500,tick:t=>{
+ animations.push({start:motionClock.now(),duration:reduced?0:1500,tick:t=>{
   const phase=t<.22?0:t<.7?1:2;
   const raw=phase===0?t/.22:phase===1?(t-.22)/.48:(t-.7)/.3,e=raw*raw*(3-2*raw);
   cart.position.lerpVectors(phase===0?from:phase===1?lifted:aboveSlot,phase===0?lifted:phase===1?aboveSlot:to,e);
@@ -359,7 +373,7 @@ async function init(){
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();fallback('三维显示暂时不可用，请重新打开房间。');});
  booted=true;enableTouchNavigation();readSize();sync();root.querySelector('.three-loading').remove();
  if(host().state().route==='game')fullscreen();
- function frame(){if(disposed)return;requestAnimationFrame(frame);if(document.hidden||immersive||document.body.classList.contains('site-open'))return;let moving=false;const now=performance.now();if(!roomPanning&&!immersive&&!tween&&!focus&&!approachProgress){orbit.update();containCamera(camera.position,orbit.target);camera.lookAt(orbit.target);}
+ function frame(){if(disposed)return;requestAnimationFrame(frame);const covered=document.hidden||immersive||document.body.classList.contains('site-open')||$('#dialog').open;motionClock.setPaused(covered);if(covered)return;let moving=false;const now=motionClock.now();if(!roomPanning&&!immersive&&!tween&&!focus&&!approachProgress){orbit.update();containCamera(camera.position,orbit.target);camera.lookAt(orbit.target);}
   if(tween){
    const travel=tween,t=travel.duration?Math.min(1,(now-travel.start)/travel.duration):1,e=1-Math.pow(1-t,3),progress=T.MathUtils.lerp(travel.from,travel.to,e);
    const pose=cameraPose(travel.path,progress);orbit.target.copy(pose.target);camera.position.copy(pose.position);camera.lookAt(orbit.target);

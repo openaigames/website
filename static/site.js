@@ -30,7 +30,7 @@
   });
   let routeId = 0, request, pageKind = '', projects = [], category = '全部', query = '', opening = false, opener, panelStack = [];
   const guideFiles={submission:'submission',contributing:'contributing',agent:'agent'};let guideEpoch=0;
-  const panelKinds = new Set(['games','title','community','board','submit','guide','resource']);
+  const panelKinds = new Set(['games','title','comments','community','board','submit','guide','resource']);
   const paths = () => (location.hash.replace(/^#\/?/, '') || 'discover').split('/');
   const external = (href, label, className = '') => !href ? label : `<a class="${className}" href="${esc(href)}" target="_blank" rel="noopener">${label} <span aria-hidden="true">↗</span></a>`;
   const sourceLabel = project => project.pending ? (project.relation==='creator' ? project.creator || '作者自荐' : '社区推荐') : project.creator || '社区创作者';
@@ -44,7 +44,9 @@
     if (open && !panel.open) {
       opener = document.activeElement;
       document.getElementById('dialog')?.close();
-      window.OpenAIGamesScene?.pause(); panel.showModal();
+      window.OpenAIGamesScene?.prepareOverlay();
+      panel.querySelector('.panel-close').setAttribute('aria-label',host()?.state().route==='game'?'关闭弹窗，继续游戏':'关闭弹窗，回到房间');
+      panel.showModal();
     } else if (!open && panel.open) panel.close();
   }
   function closePanel() {
@@ -56,6 +58,7 @@
   header.querySelector('.site-brand').addEventListener('click',event=>{if(window.OpenAIGamesScene){event.preventDefault();closePanel();window.OpenAIGamesScene.browse();}});
   panel.querySelector('.panel-close').addEventListener('click',closePanel);
   panel.addEventListener('cancel',event=>{event.preventDefault();closePanel();});
+  panel.addEventListener('keydown',event=>{if(event.key==='Escape')event.stopPropagation();});
   panel.addEventListener('click',event=>{if(event.target===panel){const rect=panel.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)closePanel();}});
   panel.querySelector('.panel-back').addEventListener('click',()=>{
     if(panelStack.length<2){closePanel();return;}panelStack.pop();const previous=panelStack.at(-1);openPage(previous.kind,previous.id,{replace:true});
@@ -99,10 +102,11 @@
     if (signal.aborted) return;
     document.title = `${project.title} · OpenAIGames`;
     if(project.pending){
-      mount(`<article class="site-content title-content"><a class="site-back" href="#/games">← 回到游戏目录</a><div class="title-layout"><div class="title-cover">${cover(project,true)}${project.gameplay_url?`<figure class="gameplay-figure"><img src="${esc(project.gameplay_url)}" alt="${esc(project.title)} 试玩截图"><figcaption>${esc(project.image_caption)}</figcaption></figure>`:''}</div><div class="title-copy"><p class="site-kicker">社区试玩 · 待补充档案</p><h1>${esc(project.title)}</h1>${badges(project)}<p class="title-description">${esc(project.description)}</p><div class="title-actions"><button class="site-button primary" data-site-play="${esc(project.id)}">插卡试玩 <span>→</span></button><button class="site-text-link" data-source-url="${esc(project.preview_url)}">原站与链接</button></div><section class="title-instructions"><h2>怎么玩</h2><p>操作方式请查看游戏原站。</p><small>默认在房间全屏试玩；其他打开方式见「原站与链接」。</small></section><section class="title-notes"><h2>投稿记录</h2><p><span>${project.relation==='creator'?'作者自荐':'社区推荐'}</span> · <span ${project.creator==='社区整理'?'':'data-i18n-ignore'}>${esc(project.creator)}</span></p><p>快捷投稿提供试玩链接，完整作者信息和源码由投稿者后续补充。</p><a class="site-text-link" href="#/board" data-board-feedback>玩过了，留句话 ↗</a></section></div></div></article>`);return;
+      mount(`<article class="site-content title-content"><a class="site-back" href="#/games">← 回到游戏目录</a><div class="title-layout"><div class="title-cover">${cover(project,true)}${project.gameplay_url?`<figure class="gameplay-figure"><img src="${esc(project.gameplay_url)}" alt="${esc(project.title)} 试玩截图"><figcaption>${esc(project.image_caption)}</figcaption></figure>`:''}</div><div class="title-copy"><p class="site-kicker">社区试玩 · 待补充档案</p><h1>${esc(project.title)}</h1>${badges(project)}<p class="title-description">${esc(project.description)}</p><div class="title-actions"><button class="site-button primary" data-site-play="${esc(project.id)}">插卡试玩 <span>→</span></button><a class="site-text-link" href="#/comments/${encodeURIComponent(project.id)}">评分与评论</a><button class="site-text-link" data-source-url="${esc(project.preview_url)}">原站与链接</button></div><section class="title-instructions"><h2>怎么玩</h2><p>操作方式请查看游戏原站。</p><small>默认在房间全屏试玩；其他打开方式见「原站与链接」。</small></section><section class="title-notes"><h2>投稿记录</h2><p><span>${project.relation==='creator'?'作者自荐':'社区推荐'}</span> · <span ${project.creator==='社区整理'?'':'data-i18n-ignore'}>${esc(project.creator)}</span></p><p>快捷投稿提供试玩链接，完整作者信息和源码由投稿者后续补充。</p><a class="site-text-link" href="#/comments/${encodeURIComponent(project.id)}">玩过了，留句话 ↗</a></section></div></div></article>`);window.OpenAIGamesComments?.summary(view,project,signal);return;
     }
 
-    mount(`<article class="site-content title-content"><a class="site-back" href="#/games">← 回到游戏目录</a><div class="title-layout"><div class="title-cover">${cover(project,true)}<span class="title-cover-note">${esc(project.creator)} / ${esc(project.version_label)}</span>${project.gameplay_url ? `<figure class="gameplay-figure"><img src="${esc(project.gameplay_url)}" alt="${esc(project.title)} 展示画面" loading="lazy" width="960" height="576"><figcaption>${esc(project.image_caption || "由创作者提供")}</figcaption></figure>` : ""}</div><div class="title-copy"><p class="site-kicker">${esc(project.category)} / 社区投稿</p><h1>${esc(project.title)}</h1>${badges(project)}<p class="title-description">${esc(project.description)}</p><div class="title-actions"><button class="site-button primary" data-site-play="${esc(project.id)}">插卡试玩 <span>→</span></button><button class="site-text-link" data-source-url="${esc(project.preview_url)}">原站与链接</button></div><section class="title-instructions"><h2>怎么玩</h2><span class="control-keys">${esc(project.controls)}</span><p>${esc(project.instructions)}</p><small>进入屏幕后点击游戏画面，让游戏接收按键。</small></section><section class="title-instructions"><h2>作者想听听</h2><ul class="feedback-questions">${project.feedback_questions.map(question=>`<li>${esc(question)}</li>`).join('')}</ul><a class="site-text-link" href="#/board" data-board-feedback>玩过了，留句话 ↗</a></section><section class="title-notes"><h2>卡带档案</h2><dl><div><dt>创作者</dt><dd data-i18n-ignore>${external(project.creator_url,esc(project.creator))}</dd></div><div><dt>投稿版本</dt><dd>${esc(project.version_label)}</dd></div><div><dt>投稿记录</dt><dd>${external(project.submission_url,'查看投稿记录')}</dd></div></dl><p>${esc(project.credits)}</p><p>${esc(project.attribution)}</p>${external(project.source_url,'查看源码与制作记录','site-text-link')}</section></div></div></article>`);
+    mount(`<article class="site-content title-content"><a class="site-back" href="#/games">← 回到游戏目录</a><div class="title-layout"><div class="title-cover">${cover(project,true)}<span class="title-cover-note">${esc(project.creator)} / ${esc(project.version_label)}</span>${project.gameplay_url ? `<figure class="gameplay-figure"><img src="${esc(project.gameplay_url)}" alt="${esc(project.title)} 展示画面" loading="lazy" width="960" height="576"><figcaption>${esc(project.image_caption || "由创作者提供")}</figcaption></figure>` : ""}</div><div class="title-copy"><p class="site-kicker">${esc(project.category)} / 社区投稿</p><h1>${esc(project.title)}</h1>${badges(project)}<p class="title-description">${esc(project.description)}</p><div class="title-actions"><button class="site-button primary" data-site-play="${esc(project.id)}">插卡试玩 <span>→</span></button><a class="site-text-link" href="#/comments/${encodeURIComponent(project.id)}">评分与评论</a><button class="site-text-link" data-source-url="${esc(project.preview_url)}">原站与链接</button></div><section class="title-instructions"><h2>怎么玩</h2><span class="control-keys">${esc(project.controls)}</span><p>${esc(project.instructions)}</p><small>进入屏幕后点击游戏画面，让游戏接收按键。</small></section><section class="title-instructions"><h2>作者想听听</h2><ul class="feedback-questions">${project.feedback_questions.map(question=>`<li>${esc(question)}</li>`).join('')}</ul><a class="site-text-link" href="#/comments/${encodeURIComponent(project.id)}">玩过了，留句话 ↗</a></section><section class="title-notes"><h2>卡带档案</h2><dl><div><dt>创作者</dt><dd data-i18n-ignore>${external(project.creator_url,esc(project.creator))}</dd></div><div><dt>投稿版本</dt><dd>${esc(project.version_label)}</dd></div><div><dt>投稿记录</dt><dd>${external(project.submission_url,'查看投稿记录')}</dd></div></dl><p>${esc(project.credits)}</p><p>${esc(project.attribution)}</p>${external(project.source_url,'查看源码与制作记录','site-text-link')}</section></div></div></article>`);
+    window.OpenAIGamesComments?.summary(view,project,signal);
   }
   function participation() {
     mount(`<section class="community-hero"><div class="site-content"><span class="site-kicker">LET’S MAKE SOMETHING PLAYABLE</span><h1>好玩的想法，<br> 值得被做出来。</h1><p>先把点子做成能玩的游戏，再一起把它变得更好。<br> 这里是 OpenAIGames，一个围绕 AI 与游戏创作的开源社区。</p><a href="#/guide/contributing" class="site-button light">看看怎么参与 →</a><span class="community-stamp" aria-hidden="true">INSERT<br>YOUR<br>IDEA.</span></div></section><section class="site-content community-content"><div class="community-section-heading"><span class="site-kicker">YOUR NEXT MOVE</span><h2>从你手上的那一点开始。</h2></div><div class="participation-row"><span class="step-number">01</span><div><h3>有一个点子</h3><p>说说玩家要做什么、哪里好玩。找几个同路人，一起做出第一版。</p></div><a href="#/board" class="site-row-link">写下游戏愿望 ↗</a></div><div class="participation-row"><span class="step-number">02</span><div><h3>已经能玩了</h3><p>填名称、试玩链接和一句介绍，审核通过后进入社区试玩。补齐资料后提 PR，正式收录进卡带目录。</p></div><a href="#/submit" class="site-row-link">快捷投稿 →</a></div><div class="participation-row"><span class="step-number">03</span><div><h3>遇到反复出现的问题</h3><p>把创作中缺的工具记下来，一起把它做成下一次创作的帮手。</p></div><a href="#/board" class="site-row-link">记下工具需求 →</a></div><div class="participation-row"><span class="step-number">04</span><div><h3>让 Agent 帮你投稿</h3><p>把 Skill 交给你的 Agent，按统一模板整理游戏、检查内容并提交 PR。新作品默认进入目录，首页精选由维护者挑选。</p></div><a href="#/guide/agent" class="site-row-link">读取 Agent Skill →</a></div><div class="community-local"><div><span class="site-kicker">START SMALL, PLAY NOW</span><h2>还没有作品？先搓一张。</h2><p>先来试玩社区里的作品，再把你的感受和想做的玩法留在留言板。</p><small>做出能玩的版本，再带上试玩地址和制作过程回到社区。</small></div><a class="site-button primary" href="#/games">试玩社区作品 <span>→</span></a></div><div class="community-footnote">站内投稿、试玩、留反馈；完整作品档案和源码协作在 GitHub 留存。<a href="#/guide/contributing">阅读参与指南 →</a></div></section>`);
@@ -130,7 +134,8 @@
     if(!options.replace && (panelStack.at(-1)?.kind!==kind || panelStack.at(-1)?.id!==id))panelStack.push({kind,id});
     const epoch = ++routeId; request?.abort(); request = new AbortController();
     pageKind = kind;
-    const names={games:'游戏目录',title:'卡带档案',board:'许愿 / 留言',submit:'快捷投稿',community:'如何共创',guide:'参与指南',resource:'来源与链接'};
+    panel.dataset.page=kind;
+    const names={games:'游戏目录',title:'卡带档案',comments:'评分与评论',board:'许愿 / 留言',submit:'快捷投稿',community:'如何共创',guide:'参与指南',resource:'来源与链接'};
     document.title = `${names[kind]} · OpenAIGames`;
     panel.querySelector('#room-panel-title').textContent=names[kind];
     panel.querySelector('.panel-back').hidden=panelStack.length<2;
@@ -139,6 +144,7 @@
     try {
       if (kind === 'games') { await catalog(request.signal); if(options.search && epoch===routeId)view.querySelector('#site-search')?.focus(); }
       else if (kind === 'title') await detail(id, request.signal);
+      else if (kind === 'comments') { const project=await read('/projects/'+encodeURIComponent(id),request.signal);window.OpenAIGamesComments.mount(view,project,request.signal); }
       else if (kind === 'board') {
         if(window.OpenAIGamesPreview) mount('<section class="site-content"><h1>试玩反馈，留在 PR 里。</h1><p>这是投稿预览，不接收正式留言。</p></section>');
         else window.OpenAIGamesBoard.mount(view, request.signal);
@@ -155,7 +161,8 @@
     const [kind,id] = paths();
     if(panelKinds.has(kind)) {
       // Old shared links open the matching room panel; subsequent navigation stays in the room.
-      history.replaceState(history.state,'',location.pathname+location.search+'#/discover');
+      const state=host()?.state();
+      history.replaceState(history.state,'',location.pathname+location.search+(state?.route==='game'?'#/game/'+encodeURIComponent(state.selected):'#/discover'));
       openPage(kind,decodeURIComponent(id||''));
     }else if(panel.open)closePanel();
   }
@@ -189,7 +196,7 @@
     else if (target.hasAttribute('data-site-create')) host()?.action('create');
     else openPage(pageKind,panelStack.at(-1)?.id||'',{replace:true});
   });
-  window.OpenAIGamesSite = Object.freeze({ play, open:openPage, close:closePanel, get page(){return pageKind;}, refresh:()=>openPage(pageKind,panelStack.at(-1)?.id||'',{replace:true}) });
+  window.OpenAIGamesSite = Object.freeze({ play, open:openPage, close:closePanel, isPanelRoute:kind=>panelKinds.has(kind), get page(){return pageKind;}, refresh:()=>openPage(pageKind,panelStack.at(-1)?.id||'',{replace:true}) });
   document.addEventListener('click',event=>{
     if(event.defaultPrevented || event.button!==0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)return;
     const link=event.target.closest('a[href]');if(!link||link.hasAttribute('download')||link.hasAttribute('data-external-direct'))return;

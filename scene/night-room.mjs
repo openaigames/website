@@ -154,7 +154,12 @@ export function nightRoom({scene, texture, targets, invalidate}) {
     cabinetPosition:(side,index)=>new T.Vector3((side===0?-8.53:7.07)+(index%4)*.485,index<4?4.64:2.44,-3.45),
     upperPosition:index=>new T.Vector3(-7.65+index*1.68,7.34,-3.25),
     deskPosition:index=>new T.Vector3(3.4+index*1.75,.02,1.45),
-    updateCabinet:layout=>{updateSign('category_left',layout.shelves[0]?.label||'');updateSign('category_right',layout.shelves[1]?.label||'');updateSign('cabinet_page',`${layout.page+1} / ${layout.pages}`);},
+    updateCabinet:layout=>{updateSign('category_left',layout.shelves[0]?.label||'');updateSign('category_right',layout.shelves[1]?.label||'');updateSign('cabinet_page',`${layout.page+1} / ${layout.pages}`);
+      for(const name of ['cabinet_previous','cabinet_page','cabinet_next']){
+        const mesh=signs.find(entry=>entry.mesh.name===name).mesh;mesh.visible=layout.pages>1;
+        const i=targets.indexOf(mesh);if(layout.pages===1&&i>=0)targets.splice(i,1);else if(layout.pages>1&&i<0&&mesh.userData.roomAction)targets.push(mesh);
+      }
+    },
     actions:[['github','GitHub · 新标签打开'],['catalog','游戏目录'],['search','搜索游戏'],['previous','上一柜'],['next','下一柜'],['music','音乐'],['submit','快捷投稿'],['community','如何共创'],['board','许愿 / 留言']]
   };
 }

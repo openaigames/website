@@ -22,6 +22,20 @@
       "when": 1789550139252,
       "tag": "0002_living_barracuda",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1789554969623,
+      "tag": "0003_common_loners",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1789556668703,
+      "tag": "0004_famous_whiplash",
+      "breakpoints": true
     }
   ]
 }

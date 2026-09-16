@@ -4,6 +4,7 @@ const b64=bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replaceAll(
 const unb64=s=>Uint8Array.from(atob(s.replaceAll('-','+').replaceAll('_','/')),c=>c.charCodeAt(0));
 const random=()=>b64(crypto.getRandomValues(new Uint8Array(32)));
 export const hash=value=>crypto.subtle.digest('SHA-256',encoder.encode(value)).then(b64);
+export function safeReturn(value){return value==='room'?'/' : /^\/(?:\?lang=(?:en|zh))?(?:#\/(?:title|comments)\/[a-zA-Z0-9_-]{1,100})?$/.test(value||'')?value:'/admin';}
 function configured(env){return env.GITHUB_CLIENT_ID&&env.GITHUB_CLIENT_SECRET&&env.ADMIN_SESSION_SECRET?.length>=32&&env.ADMIN_ORIGIN;}
 export function adminOrigin(request,env){
  if(!configured(env)||!env.DB||env.CATALOG_MODE==='preview'||env.BOARD_UPSTREAM)return null;
@@ -28,7 +29,7 @@ async function github(path,token){
 export const isAdministrator = identity => identity.github_id === 102272920; // mattheliu; immutable GitHub user ID
 
 export async function adminIdentity(request,env){
- if(!adminOrigin(request,env))return json({error:'管理员登录尚未配置。'},503);
+ if(!adminOrigin(request,env))return json({error:'GitHub 登录尚未配置。'},503);
  const token=readCookie(request,'session');if(!/^[\w-]{43}$/.test(token))return json({error:'请先使用 GitHub 登录。'},401);
  const session=await env.DB.prepare('SELECT * FROM admin_sessions WHERE hash=? AND expires_at>?').bind(await hash(token),Date.now()).first();
  if(!session)return json({error:'登录已过期，请重新登录。'},401);
@@ -41,17 +42,17 @@ export async function adminIdentity(request,env){
  return session;
 }
 export async function login(request,env){
- const origin=adminOrigin(request,env);if(!origin)return json({error:'管理员登录尚未配置。'},503);
+ const origin=adminOrigin(request,env);if(!origin)return json({error:'GitHub 登录尚未配置。'},503);
  const now=Date.now(),ipKey=await hash(`${Math.floor(now/86400000)}:${env.ADMIN_SESSION_SECRET}:${request.headers.get('CF-Connecting-IP')||'local'}`);
  const state=random(),verifier=random();
- const inserted=await env.DB.prepare('INSERT INTO admin_oauth_states(hash,verifier,ip_key,created_at,return_to) SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM admin_oauth_states WHERE ip_key=? AND created_at>?)<10').bind(await hash(state),verifier,ipKey,now,new URL(request.url).searchParams.get('return')==='room'?'/':'/admin',ipKey,now-60000).run();
+ const inserted=await env.DB.prepare('INSERT INTO admin_oauth_states(hash,verifier,ip_key,created_at,return_to) SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM admin_oauth_states WHERE ip_key=? AND created_at>?)<10').bind(await hash(state),verifier,ipKey,now,safeReturn(new URL(request.url).searchParams.get('return')),ipKey,now-60000).run();
  if(!inserted.meta.changes)return json({error:'登录尝试过于频繁，请稍后重试。'},429,{'Retry-After':'60'});
  await env.DB.batch([env.DB.prepare('DELETE FROM admin_oauth_states WHERE created_at<?').bind(now-600000),env.DB.prepare('DELETE FROM admin_sessions WHERE expires_at<?').bind(now)]);
  const url=new URL('https://github.com/login/oauth/authorize');url.search=new URLSearchParams({client_id:env.GITHUB_CLIENT_ID,redirect_uri:origin+'/api/auth/github/callback',scope:'',state,code_challenge:await hash(verifier),code_challenge_method:'S256',allow_signup:'false'});
  return redirect(url.href,[cookie(request,'oauth',state,600)]);
 }
 export async function callback(request,env){
- const origin=adminOrigin(request,env);if(!origin)return json({error:'管理员登录尚未配置。'},503);
+ const origin=adminOrigin(request,env);if(!origin)return json({error:'GitHub 登录尚未配置。'},503);
  const params=new URL(request.url).searchParams,state=params.get('state'),code=params.get('code');
  const failure=reason=>redirect('/admin?auth='+reason,[cookie(request,'oauth','',0)]);
  if(!state||!/^[\w-]{43}$/.test(state)||state!==readCookie(request,'oauth'))return failure('state');
@@ -64,6 +65,7 @@ export async function callback(request,env){
  if(!user||!Number.isSafeInteger(user.id))return failure('denied');
  const now=Date.now(),seconds=Math.max(60,Math.min(28800,Number(result.expires_in)||28800)-60),token=random();
  await env.DB.prepare('INSERT INTO admin_sessions(hash,github_id,login,token,csrf,expires_at,verified_at) VALUES(?,?,?,?,?,?,?)').bind(await hash(token),user.id,user.login,await encryptToken(result.access_token,env),random(),now+seconds*1000,now).run();
- return redirect(pending.return_to==='/'?'/':'/admin',[cookie(request,'oauth','',0),cookie(request,'session',token,seconds)]);
+ const destination=safeReturn(pending.return_to);
+ return redirect(destination==='/admin'&&!isAdministrator({github_id:user.id})?'/':destination,[cookie(request,'oauth','',0),cookie(request,'session',token,seconds)]);
 }
 export async function logout(request,env,session){await env.DB.prepare('DELETE FROM admin_sessions WHERE hash=?').bind(session.hash).run();return json({ok:true},200,{'Set-Cookie':cookie(request,'session','',0)});}

@@ -23,6 +23,12 @@ node scripts/submissions.mjs import content/submissions-2026-09-15.json --remote
 
 These commands use existing Wrangler authorization. Review status changes belong in the authenticated review desk so their audit history is retained. Obtain creator confirmation and complete the community submission guide before preparing `demos/<id>/game.json`. After the formal PR is merged, archive its duplicate intake record in the desk. Omit `--remote` for local development.
 
+## Current release: community feedback
+
+The room keeps featured cartridges on the left and community playtests on the right, with stable ordering. A collection stays in place until it overflows; a one-page cabinet hides paging controls. Larger collections turn only the overflowing pages, keeping the shorter side fixed.
+
+The account popover shows the GitHub avatar and username. Game details show average rating, voter count, likes and comment count. The player toolbar opens the same room feedback panel. Each GitHub account can keep one 1–5-star rating and one like per game, update or clear its rating, undo its like, and post or delete its own comments; the public login screen has no administrator allowlist copy. This update adds migrations `0003_common_loners.sql` (comments) and `0004_famous_whiplash.sql` (ratings and likes), applied to the primary database on 2026-09-16. See [the release record](docs/RELEASE_2026-09-16_FEEDBACK.md) and [authentication notes](docs/AUTH_AND_MODERATION.md) for validation and persistence details.
+
 ## Local development
 
 ```sh
@@ -75,6 +81,10 @@ Mobile catalog, submissions, community, notes and radio use dark bottom sheets. 
 The gesture state machine, sheet dismissal and camera paths have automated regression tests. Responsive browser checks cover 320 × 740, 360 × 800, 390 × 844, 430 × 932 and 844 × 390 layouts, including the catalog, submissions, notes, community, game details and guides in Chinese and English. Full-window game framing and unloading on return are also checked. Physical iOS/Android multi-touch and software-keyboard behavior still need a real-device check before claiming device compatibility.
 
 The full-window game toolbar includes a rotation toggle on desktop and mobile. It rotates the existing iframe by 90 degrees and exchanges its layout dimensions, preserving the game session without requiring device orientation-lock support. The toolbar stays upright and accessible. Clicking again, changing games or rotating the physical device resets the manual orientation. This does not add touch controls to games that only support a keyboard.
+
+Reviews, game details, and the change-game picker now cover the live game without ejecting it or resetting the camera. Closing via ×, Escape, backdrop, or the mobile sheet handle returns to the same session and orientation. Choosing the same game continues it; choosing a different game unloads the old iframe. Camera/cartridge animation time stops behind panels instead of jumping ahead when they close. These interactions do not guarantee pausing a third-party game's engine or audio, and a full-page GitHub authorization still leaves the current document.
+
+The compact review panel keeps rating stars, likes, and the comment form at the top, with unrelated room navigation hidden. Signed-in ratings save on tap and can be changed or cleared; likes toggle immediately, and comments have one send button. Local browser checks cover fullscreen return, nested panels, language switching, same/different-game selection, mobile sheet dismissal, and 320/390 px review layouts. Signed-in rating/like/comment checks use an isolated test account and database, not production player records.
 
 
 ### Room music and navigation

@@ -31,8 +31,10 @@
       const game = projects.find(p => p.id === gameId);
       if (!game) throw Error('Unknown game');
       if (!window.OpenAIGamesSite?.play) throw Error('The showcase is still loading');
+      const state=window.OpenAIGamesHost?.state();
+      const alreadyPlaying=state?.route==='game'&&state.selected===gameId&&document.querySelector('#player iframe');
       await window.OpenAIGamesSite.play(gameId);
-      await new Promise((resolve, reject) => {
+      if(!alreadyPlaying)await new Promise((resolve, reject) => {
         let timer;
         const done = () => { clearTimeout(timer); window.removeEventListener('openaigames-game-ready', ready); };
         const ready = event => { if (event.detail?.id === gameId) { done(); resolve(); } };

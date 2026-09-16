@@ -58,3 +58,23 @@ export const adminSessions = sqliteTable('admin_sessions', {
   expiresAt: integer('expires_at').notNull(),
   verifiedAt: integer('verified_at').notNull(),
 }, t => [index('idx_admin_session_expiry').on(t.expiresAt)]);
+
+export const gameComments = sqliteTable('game_comments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  requestId: text('request_id').notNull(),
+  gameKey: text('game_key').notNull(),
+  githubId: integer('github_id').notNull(),
+  login: text('login').notNull(),
+  body: text('body').notNull(),
+  createdAt: integer('created_at').notNull(),
+  deletedAt: integer('deleted_at'),
+}, t => [uniqueIndex('idx_comment_request').on(t.githubId,t.requestId), index('idx_comment_game').on(t.gameKey,t.id), index('idx_comment_user_time').on(t.githubId,t.createdAt)]);
+
+export const gameReactions = sqliteTable('game_reactions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  gameKey: text('game_key').notNull(),
+  githubId: integer('github_id').notNull(),
+  rating: integer('rating'),
+  liked: integer('liked').notNull().default(0),
+  updatedAt: integer('updated_at').notNull(),
+}, t => [uniqueIndex('idx_reaction_game_user').on(t.gameKey,t.githubId)]);
