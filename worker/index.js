@@ -6,12 +6,15 @@ import { submissions } from './submissions.js';
 import { admin, adminPage } from './admin.js';
 import { music } from './music.js';
 import { comments } from './comments.js';
+import { collectAnalytics,cleanupAnalytics } from './analytics.js';
 export default {
+  async scheduled(event,env,ctx){ctx.waitUntil(cleanupAnalytics(env));},
   async fetch(request, env, ctx) {
     const path = new URL(request.url).pathname;
     try {
       if (['/admin','/admin/','/static/admin','/static/admin/','/static/admin/index.html'].includes(path)) return await adminPage(request, env);
       if (path.startsWith('/api/admin/') || path.startsWith('/api/auth/')) return await admin(request, env);
+      if (path === '/api/analytics/event') return await collectAnalytics(request,env);
       if (path.startsWith('/api/music/')) return await music(request);
       if (path === '/api/comments') return await comments(request, env);
       if (path === '/api/submissions') return await submissions(request, env, ctx);

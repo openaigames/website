@@ -36,12 +36,18 @@
   "vars": {
     "CATALOG_MODE": "production",
     "ADMIN_ORIGIN": "https://openaigames.org",
-    "GITHUB_CLIENT_ID": "Ov23liQPBUoUNQGkyMsC"
+    "GITHUB_CLIENT_ID": "Ov23liQPBUoUNQGkyMsC",
+    "ANALYTICS_ENABLED": "1"
   },
   "routes": [
     {
       "pattern": "openaigames.org",
       "custom_domain": true
     }
-  ]
+  ],
+  "triggers": {
+    "crons": [
+      "15 19 * * *"
+    ]
+  }
 }

@@ -78,3 +78,24 @@ export const gameReactions = sqliteTable('game_reactions', {
   liked: integer('liked').notNull().default(0),
   updatedAt: integer('updated_at').notNull(),
 }, t => [uniqueIndex('idx_reaction_game_user').on(t.gameKey,t.githubId)]);
+
+export const analyticsEvents = sqliteTable('analytics_events', {
+  id: text('id').primaryKey(),
+  visitor: text('visitor').notNull(),
+  kind: text('kind', { enum: ['pageview','play'] }).notNull(),
+  gameKey: text('game_key').notNull().default(''),
+  gameTitle: text('game_title').notNull().default(''),
+  source: text('source').notNull(),
+  device: text('device').notNull(),
+  host: text('host').notNull(),
+  createdAt: integer('created_at').notNull(),
+}, t => [index('idx_analytics_time').on(t.createdAt), index('idx_analytics_visitor_time').on(t.visitor,t.createdAt)]);
+export const analyticsMeta = sqliteTable('analytics_meta', {
+  key: text('key').primaryKey(),
+  value: integer('value').notNull(),
+});
+export const analyticsLimits = sqliteTable('analytics_limits', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  expiresAt: integer('expires_at').notNull(),
+}, t => [index('idx_analytics_limit_expiry').on(t.expiresAt)]);

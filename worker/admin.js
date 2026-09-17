@@ -1,5 +1,6 @@
 import {json,readBody} from './board-http.js';
 import {adminIdentity,isAdministrator,login,callback,logout} from './admin-auth.js';
+import {analyticsReport} from './analytics.js';
 const fields='id,title,url,description,submitter,relation,status,created_at,review_version,reviewed_at,reviewed_by,review_note';
 const transitions={pending:['approved','rejected'],approved:['archived'],rejected:['pending'],archived:['pending','approved']};
 export async function admin(request,env){
@@ -14,6 +15,7 @@ export async function admin(request,env){
  if(path==='/api/auth/session'&&request.method==='GET')return json({user:{id:identity.github_id,login:identity.login,isAdmin:isAdministrator(identity)},csrf:identity.csrf,expiresAt:identity.expires_at});
  if(path==='/api/auth/logout'&&request.method==='POST')return logout(request,env,identity);
  if(!isAdministrator(identity))return json({error:'当前账号没有审核权限。'},403);
+ if(path==='/api/admin/analytics'&&request.method==='GET')return analyticsReport(request,env);
  if(path==='/api/admin/submissions'&&request.method==='GET'){
   const status=url.searchParams.get('status')||'pending',q=url.searchParams.get('q')||'',before=url.searchParams.get('before');
   if(!['all',...Object.keys(transitions)].includes(status)||q.length>100||(before&&!/^[1-9]\d{0,14}$/.test(before)))return json({error:'查询条件无效。'},400);
