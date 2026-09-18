@@ -25,7 +25,7 @@ test('Analytics counts reloads but deduplicates visitors and retry IDs; only adm
   assert.equal((await f.call('/api/admin/analytics')).status,401);
   assert.equal((await f.call('/api/admin/analytics',{headers:await f.session(888)})).status,403);
   const admin=await f.session(102272920),report=await(await f.call('/api/admin/analytics',{headers:admin})).json();
-  assert.deepEqual(report.summary,{pageviews:2,visitors:1,plays:1,players:1});assert.equal(report.games[0].title,'Dodo');assert.equal(report.sources[0].name,'direct');assert.ok(report.startedAt);
+  assert.deepEqual(report.summary,{pageviews:2,visitors:1,plays:1,players:1,selections:0});assert.equal(report.games[0].title,'Dodo');assert.equal(report.sources[0].name,'direct');assert.ok(report.startedAt);
   const stored=(await f.db.prepare('SELECT * FROM analytics_events').all()).results;assert.equal(stored.length,3);assert.ok(stored.every(e=>e.visitor!==visitor));assert.ok(!JSON.stringify(stored).includes('203.0.113.1'));
   assert.equal((await f.event({id})).status,409);assert.equal((await f.call('/api/admin/analytics?from=2020-01-01',{headers:admin})).status,400);
  }finally{await f.mf.dispose();}
@@ -70,4 +70,43 @@ test('Analytics shares game identity after catalog promotion and never enables p
   const report=await(await f.call('/api/admin/analytics',{headers:await f.session(102272920)})).json();assert.equal(report.games.length,1);assert.equal(report.games[0].plays,2);assert.equal(report.games[0].players,1);
  }finally{await f.mf.dispose();}
  for(const config of [{CATALOG_MODE:'preview'},{ANALYTICS_ENABLED:'0'},{ADMIN_SESSION_SECRET:''}]){const f=await fixture(config);try{assert.equal((await f.event()).status,403);assert.equal((await f.db.prepare('SELECT COUNT(*) AS n FROM analytics_events').first()).n,0);}finally{await f.mf.dispose();}}
+});
+test('Explicit selections use published identity but do not create opens or page views',async()=>{
+ const f=await fixture();try{
+  const visitor=crypto.randomUUID(),id=crypto.randomUUID();
+  assert.equal((await f.event({id,visitor,kind:'select',game:'dodo'})).status,204);
+  assert.equal((await f.event({id,visitor,kind:'select',game:'dodo'})).status,204);
+  assert.equal((await f.event({visitor,kind:'select',game:'unpublished'})).status,404);
+  const report=await(await f.call('/api/admin/analytics',{headers:await f.session(102272920)})).json();
+  assert.deepEqual(report.summary,{pageviews:0,visitors:0,plays:0,players:0,selections:1});assert.equal(report.games[0].selections,1);assert.equal(report.games[0].plays,0);assert.equal(report.games[0].players,0);
+ }finally{await f.mf.dispose();}
+});
+test('Active duration is cumulative, visit-bound, bounded and excludes old-client visits from averages',async()=>{
+ const f=await fixture();try{
+  const visitor=crypto.randomUUID(),visit=crypto.randomUUID();
+  await f.event({visitor}); // Old client: no eligible timed visit.
+  assert.equal((await f.event({id:visit,visitor,version:2})).status,204);
+  assert.equal((await f.event({id:visit,visitor,version:2})).status,204);
+  await f.event({visitor,version:2}); // Zero-duration visit must remain in denominator.
+  await f.db.prepare('UPDATE analytics_visits SET created_at=created_at-60000 WHERE id=?').bind(visit).run();
+  const heartbeat={visitor,kind:'engagement',visit,activeMs:30000};
+  assert.equal((await f.event(heartbeat)).status,204);assert.equal((await f.event(heartbeat)).status,204);
+  assert.equal((await f.event({...heartbeat,activeMs:15000})).status,204); // Late delivery does not reduce the total.
+  for(const value of [-1,1.5,'30000',DAY+1])assert.equal((await f.event({...heartbeat,activeMs:value})).status,400);
+  assert.equal((await f.event({...heartbeat,activeMs:120000})).status,400);
+  assert.equal((await f.event({...heartbeat,visitor:crypto.randomUUID()})).status,404);
+  assert.equal((await f.event(heartbeat,{Origin:legacy})).status,404);
+  assert.equal((await f.event({...heartbeat,visit:crypto.randomUUID()})).status,404);
+  assert.equal((await f.event({...heartbeat,game:'dodo'})).status,400);
+  assert.equal((await f.event({activeMs:1})).status,400);
+  assert.equal((await f.event({kind:'select',game:'dodo',version:2})).status,400);
+  const admin=await f.session(102272920),report=await(await f.call('/api/admin/analytics',{headers:admin})).json();
+  assert.deepEqual(report.attention,{visits:2,totalActiveMs:30000,avgActiveMs:15000});assert.ok(report.engagementStartedAt);assert.equal(report.summary.pageviews,3);
+  assert.equal((await f.db.prepare('SELECT COUNT(*) AS n FROM analytics_events').first()).n,3);
+  // A period with no timing-capable visits is explicitly empty, not a fake zero-second average of old traffic.
+  const yesterday=new Date(Date.now()+8*3600000-DAY).toISOString().slice(0,10);
+  const empty=await(await f.call('/api/admin/analytics?'+new URLSearchParams({from:yesterday,to:yesterday}),{headers:admin})).json();assert.equal(empty.attention.visits,0);
+  await f.db.prepare('UPDATE analytics_visits SET created_at=? WHERE id=?').bind(Date.now()-91*DAY,visit).run();
+  await cleanupAnalytics({DB:f.db,ANALYTICS_ENABLED:'1'});assert.equal((await f.db.prepare('SELECT COUNT(*) AS n FROM analytics_visits').first()).n,1);
+ }finally{await f.mf.dispose();}
 });

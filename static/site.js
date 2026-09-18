@@ -172,6 +172,7 @@
     try {
       // Refresh the host list before selecting a release created since its last poll.
       if (!host()?.state().projects.some(project => project.id === id)) {
+        window.dispatchEvent(new CustomEvent('openaigames-game-select',{detail:{id}}));
         closePanel();
         location.hash = '/game/' + encodeURIComponent(id);
         return;
@@ -209,7 +210,7 @@
     if(!href.startsWith('#/'))return;
     const [kind,id]=link.getAttribute('href').slice(2).split('/');
     if(link.hasAttribute('data-board-feedback'))window.OpenAIGamesBoard.prepareFeedback();
-    if(panelKinds.has(kind)){event.preventDefault();openPage(kind,decodeURIComponent(id||''));}
+    if(panelKinds.has(kind)){event.preventDefault();if(kind==='title'&&link.closest('.catalog-game,.submission-card'))window.dispatchEvent(new CustomEvent('openaigames-game-select',{detail:{id:decodeURIComponent(id||'')}}));openPage(kind,decodeURIComponent(id||''));}
     else if(kind==='discover'&&panel.open){event.preventDefault();closePanel();}
   },true);
   window.addEventListener('openaigames-language',()=>{

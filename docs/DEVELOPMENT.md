@@ -16,7 +16,7 @@ The local configuration falls back to the included published catalog when no `CA
 
 ## Production and previews
 
-Latest deployment: [visitor analytics · 2026-09-17](RELEASE_2026-09-17_ANALYTICS.md).
+Latest deployment: [game selection and active-time analytics · 2026-09-18](RELEASE_2026-09-18_ATTENTION.md).
 
 Production and preview now run in the domain account (`1df8f334169206788cc480fb569f1761`). Use `npm run cf -- <wrangler arguments>` to select the isolated local credentials without changing other projects’ Wrangler login. The submissions maintainer commands select the same credentials automatically. On another computer, sign in to the domain account or supply its scoped Cloudflare API token. See [the migration record](CLOUDFLARE_MIGRATION.md).
 
@@ -27,7 +27,7 @@ Production and preview now run in the domain account (`1df8f334169206788cc480fb5
 
 The community's trusted default-branch workflow reads PR metadata as JSON, validates it, and POSTs a bounded catalog snapshot to the preview Worker's `/internal/catalog`. The narrow `CATALOG_PUBLISH_SECRET` is stored in Cloudflare and GitHub Secrets; it has no Cloudflare account permissions. A monotonic workflow sequence prevents older jobs replacing newer snapshots. Invalid PR revisions are marked unavailable. Production retains its previous catalog if publication fails.
 
-Catalog publication does not redeploy the website. GET `/api/catalog` uses `Cache-Control: no-store`; browser reads refresh after 30 seconds or a page reload. Main-branch publications use the production channel; PR publications use independent channels. Closed and merged PRs are labeled, and historical snapshots remain readable by revision. Preview feedback goes to GitHub and cannot be submitted to the production message board. First-party visitor and game-open statistics are available to administrators at `/admin#analytics`; no GA4 or third-party analytics script is used. See [analytics definitions and privacy](ANALYTICS.md).
+Catalog publication does not redeploy the website. GET `/api/catalog` uses `Cache-Control: no-store`; browser reads refresh after 30 seconds or a page reload. Main-branch publications use the production channel; PR publications use independent channels. Closed and merged PRs are labeled, and historical snapshots remain readable by revision. Preview feedback goes to GitHub and cannot be submitted to the production message board. First-party visitor, game-selection, game-open and active website time statistics are available to administrators at `/admin#analytics`; no GA4 or third-party analytics script is used. See [analytics definitions and privacy](ANALYTICS.md).
 
 Deploy code changes with `npm run build`, `npm test`, then `npm run cf -- deploy --config wrangler.cloudflare.json` (or `wrangler.preview.json`). Apply catalog migrations with `npm run cf -- d1 migrations apply CATALOG --remote --config wrangler.preview.json` when they change. Website-code PR deployments are not automated by the community data workflow.
 

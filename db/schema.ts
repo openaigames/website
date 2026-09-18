@@ -82,7 +82,7 @@ export const gameReactions = sqliteTable('game_reactions', {
 export const analyticsEvents = sqliteTable('analytics_events', {
   id: text('id').primaryKey(),
   visitor: text('visitor').notNull(),
-  kind: text('kind', { enum: ['pageview','play'] }).notNull(),
+  kind: text('kind', { enum: ['pageview','play','select'] }).notNull(),
   gameKey: text('game_key').notNull().default(''),
   gameTitle: text('game_title').notNull().default(''),
   source: text('source').notNull(),
@@ -90,6 +90,14 @@ export const analyticsEvents = sqliteTable('analytics_events', {
   host: text('host').notNull(),
   createdAt: integer('created_at').notNull(),
 }, t => [index('idx_analytics_time').on(t.createdAt), index('idx_analytics_visitor_time').on(t.visitor,t.createdAt)]);
+export const analyticsVisits = sqliteTable('analytics_visits', {
+  id: text('id').primaryKey(),
+  visitor: text('visitor').notNull(),
+  host: text('host').notNull(),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+  activeMs: integer('active_ms').notNull().default(0),
+}, t => [index('idx_analytics_visit_time').on(t.createdAt)]);
 export const analyticsMeta = sqliteTable('analytics_meta', {
   key: text('key').primaryKey(),
   value: integer('value').notNull(),
