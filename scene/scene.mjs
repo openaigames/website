@@ -372,6 +372,7 @@ async function init(){
  window.addEventListener('openaigames-language',()=>{if(booted&&!disposed){refreshRack();applyLabel(manual,'manual_cover',window.OpenAIGamesI18n?.t('怎么玩')||'怎么玩',{bg:'#92b5db',fg:'#122850',w:512,h:700,size:100,sub:'OpenAIGames'});dirty=true;}});window.addEventListener('openaigames-state',sync);window.addEventListener('resize',readSize);window.addEventListener('keydown',e=>{if(document.body.classList.contains('site-open'))return;if(e.key==='Escape'&&!document.getElementById('dialog').open){cameraTo('overview');}});
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();fallback('三维显示暂时不可用，请重新打开房间。');});
  booted=true;enableTouchNavigation();readSize();sync();root.querySelector('.three-loading').remove();
+ window.dispatchEvent(new CustomEvent('openaigames-room-ready'));
  if(host().state().route==='game')fullscreen();
  function frame(){if(disposed)return;requestAnimationFrame(frame);const covered=document.hidden||immersive||document.body.classList.contains('site-open')||$('#dialog').open;motionClock.setPaused(covered);if(covered)return;let moving=false;const now=motionClock.now();if(!roomPanning&&!immersive&&!tween&&!focus&&!approachProgress){orbit.update();containCamera(camera.position,orbit.target);camera.lookAt(orbit.target);}
   if(tween){
@@ -396,6 +397,7 @@ async function init(){
  frame();
  };
 function fallback(message){
+ window.dispatchEvent(new CustomEvent('openaigames-room-error',{detail:{code:booted?'webgl':'resource'}}));
  disposed=true;touchNavigation?.dispose();cabinetNavigation?.dispose();renderer?.dispose();document.body.classList.remove('is-3d');
  if(!root.isConnected)document.body.append(root);
  root.innerHTML=`<div class="scene-error" role="alert"><h1>房间暂时没有打开</h1><p>${message||'请检查连接后重试。'}</p><button type="button" id="retry-room">重新打开房间</button><button type="button" id="fallback-catalog">打开游戏目录</button></div>`;

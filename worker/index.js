@@ -1,3 +1,4 @@
+import {trackedWrite} from './analytics-flows.js';
 import { board } from './board.js';
 import { json } from './board-http.js';
 import { relayBoard } from './board-relay.js';
@@ -16,8 +17,8 @@ export default {
       if (path.startsWith('/api/admin/') || path.startsWith('/api/auth/')) return await admin(request, env);
       if (path === '/api/analytics/event') return await collectAnalytics(request,env);
       if (path.startsWith('/api/music/')) return await music(request);
-      if (path === '/api/comments') return await comments(request, env);
-      if (path === '/api/submissions') return await submissions(request, env, ctx);
+      if (path === '/api/comments') return await trackedWrite(request,env,()=>comments(request,env),ctx);
+      if (path === '/api/submissions') return await trackedWrite(request,env,()=>submissions(request,env,ctx),ctx);
       if (path === '/api/catalog' || path === '/catalog.json') return await catalog(request, env);
       if (path === '/internal/catalog') return await publishCatalog(request, env);
       if (env.CATALOG_MODE === 'preview' && path === '/api/board') return json({error:'预览站不接收正式留言。'},403);

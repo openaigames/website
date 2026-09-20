@@ -78,6 +78,14 @@
   function loading() {
     view.innerHTML = '<div class="site-state" role="status"><span class="site-kicker">READING CARTRIDGES</span><h1>正在打开卡带盒…</h1><div class="loading-track" aria-hidden="true"></div></div>';
   }
+  let searchTimer,searchFlow=null,searchDirty=false;
+  function commitSearch(){
+    clearTimeout(searchTimer);if(!searchDirty)return;searchDirty=false;
+    const grid=view.querySelector('#site-game-grid');if(!grid||!query.trim()){searchFlow=null;return;}
+    const telemetry=window.OpenAIGamesTelemetry;searchFlow=telemetry?.begin('search');
+    telemetry?.step(searchFlow,'results',{resultCount:grid.querySelectorAll('.catalog-game').length});
+  }
+  function searchSelected(){commitSearch();window.OpenAIGamesTelemetry?.step(searchFlow,'select');}
   function renderCards() {
     const list = view.querySelector('#site-game-grid');
     if (!list) return;
@@ -131,6 +139,7 @@
   }
   async function openPage(kind, id = '', options = {}) {
     if(!panelKinds.has(kind))return;
+    if(pageKind==='games'&&kind!=='games'){commitSearch();searchFlow=null;}
     if(!options.replace && (panelStack.at(-1)?.kind!==kind || panelStack.at(-1)?.id!==id))panelStack.push({kind,id});
     const epoch = ++routeId; request?.abort(); request = new AbortController();
     pageKind = kind;
@@ -182,18 +191,18 @@
     } finally { opening = false; }
   }
   view.addEventListener('input', event => {
-    if (event.target.id === 'site-search') { query = event.target.value; renderCards(); }
+    if (event.target.id === 'site-search') { query = event.target.value; renderCards();searchDirty=true;searchFlow=null;clearTimeout(searchTimer);searchTimer=setTimeout(commitSearch,500); }
   });
   document.addEventListener('click', event => {
     if (event.target.closest?.('[data-board-feedback]')) window.OpenAIGamesBoard.prepareFeedback();
     const target = event.target.closest?.('[data-site-category],[data-site-reset],[data-site-play],[data-site-create],[data-site-retry],[data-source-url],[data-copy-resource],[data-copy-guide]');
     if (!target) return;
-    if (target.hasAttribute('data-site-category')) { category = target.dataset.siteCategory; renderCards(); }
-    else if (target.hasAttribute('data-site-reset')) { category = '全部'; query = ''; view.querySelector('#site-search').value = ''; renderCards(); view.querySelector('#site-search').focus(); }
+    if (target.hasAttribute('data-site-category')) { category = target.dataset.siteCategory; renderCards();searchDirty=!!query.trim();searchFlow=null;commitSearch(); }
+    else if (target.hasAttribute('data-site-reset')) { category = '全部'; query = '';searchDirty=false;searchFlow=null;clearTimeout(searchTimer); view.querySelector('#site-search').value = ''; renderCards(); view.querySelector('#site-search').focus(); }
     else if(target.hasAttribute('data-source-url')) openPage('resource',target.dataset.sourceUrl);
     else if(target.hasAttribute('data-copy-resource')) copyText(target.dataset.copyResource,target);
     else if(target.hasAttribute('data-copy-guide')) copyText(view.querySelector('.guide-source').textContent,target);
-    else if (target.hasAttribute('data-site-play')) play(target.dataset.sitePlay);
+    else if (target.hasAttribute('data-site-play')) {if(target.closest('.catalog-game'))searchSelected();play(target.dataset.sitePlay);}
     else if (target.hasAttribute('data-site-create')) host()?.action('create');
     else openPage(pageKind,panelStack.at(-1)?.id||'',{replace:true});
   });
@@ -210,7 +219,7 @@
     if(!href.startsWith('#/'))return;
     const [kind,id]=link.getAttribute('href').slice(2).split('/');
     if(link.hasAttribute('data-board-feedback'))window.OpenAIGamesBoard.prepareFeedback();
-    if(panelKinds.has(kind)){event.preventDefault();if(kind==='title'&&link.closest('.catalog-game,.submission-card'))window.dispatchEvent(new CustomEvent('openaigames-game-select',{detail:{id:decodeURIComponent(id||'')}}));openPage(kind,decodeURIComponent(id||''));}
+    if(panelKinds.has(kind)){if(kind==='title'&&link.closest('.catalog-game'))searchSelected();event.preventDefault();if(kind==='title'&&link.closest('.catalog-game,.submission-card'))window.dispatchEvent(new CustomEvent('openaigames-game-select',{detail:{id:decodeURIComponent(id||'')}}));openPage(kind,decodeURIComponent(id||''));}
     else if(kind==='discover'&&panel.open){event.preventDefault();closePanel();}
   },true);
   window.addEventListener('openaigames-language',()=>{

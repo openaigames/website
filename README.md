@@ -56,7 +56,8 @@ npm run dev
 | [开发与部署](docs/DEVELOPMENT.md) | 本地环境、发布流程、目录同步与 i18n |
 | [房间交互](docs/ROOM.md) | 镜头、触控、全屏游戏、反馈和音乐 |
 | [登录与审核](docs/AUTH_AND_MODERATION.md) | GitHub 登录、投稿审核和权限校验 |
-| [访问统计](docs/ANALYTICS.md) | PV、估算 UV、游戏打开次数与统计口径 |
+| [游戏运行数据接入](docs/GAME_TELEMETRY.md) | 作者可选接入的就绪、局数与有效时长 SDK |
+| [访问统计](docs/ANALYTICS.md) | 访问、参与流程、游戏运行与回访口径 |
 
 管理员在[管理后台](https://openaigames.org/admin)审核投稿、查看数据。后台源码包含在本仓库中，权限由服务端校验；密钥、登录会话和用户数据不随源码公开。
 

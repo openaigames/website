@@ -1,3 +1,4 @@
+import {loginFlow,authOutcome} from './analytics-flows.js';
 import { json } from './board-http.js';
 const encoder=new TextEncoder();
 const b64=bytes=>btoa(String.fromCharCode(...new Uint8Array(bytes))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
@@ -45,8 +46,10 @@ export async function login(request,env){
  const origin=adminOrigin(request,env);if(!origin)return json({error:'GitHub 登录尚未配置。'},503);
  const now=Date.now(),ipKey=await hash(`${Math.floor(now/86400000)}:${env.ADMIN_SESSION_SECRET}:${request.headers.get('CF-Connecting-IP')||'local'}`);
  const state=random(),verifier=random();
- const inserted=await env.DB.prepare('INSERT INTO admin_oauth_states(hash,verifier,ip_key,created_at,return_to) SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM admin_oauth_states WHERE ip_key=? AND created_at>?)<10').bind(await hash(state),verifier,ipKey,now,safeReturn(new URL(request.url).searchParams.get('return')),ipKey,now-60000).run();
- if(!inserted.meta.changes)return json({error:'登录尝试过于频繁，请稍后重试。'},429,{'Retry-After':'60'});
+ let flow='';try{flow=await loginFlow(request,env);}catch{}
+ const inserted=await env.DB.prepare('INSERT INTO admin_oauth_states(hash,verifier,ip_key,created_at,return_to,analytics_flow) SELECT ?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM admin_oauth_states WHERE ip_key=? AND created_at>?)<10').bind(await hash(state),verifier,ipKey,now,safeReturn(new URL(request.url).searchParams.get('return')),flow,ipKey,now-60000).run();
+ if(!inserted.meta.changes){await authOutcome(env,flow,'error','rate_limited');return json({error:'登录尝试过于频繁，请稍后重试。'},429,{'Retry-After':'60'});}
+ await authOutcome(env,flow,'attempt');
  await env.DB.batch([env.DB.prepare('DELETE FROM admin_oauth_states WHERE created_at<?').bind(now-600000),env.DB.prepare('DELETE FROM admin_sessions WHERE expires_at<?').bind(now)]);
  const url=new URL('https://github.com/login/oauth/authorize');url.search=new URLSearchParams({client_id:env.GITHUB_CLIENT_ID,redirect_uri:origin+'/api/auth/github/callback',scope:'',state,code_challenge:await hash(verifier),code_challenge_method:'S256',allow_signup:'false'});
  return redirect(url.href,[cookie(request,'oauth',state,600)]);
@@ -54,10 +57,14 @@ export async function login(request,env){
 export async function callback(request,env){
  const origin=adminOrigin(request,env);if(!origin)return json({error:'GitHub 登录尚未配置。'},503);
  const params=new URL(request.url).searchParams,state=params.get('state'),code=params.get('code');
- const failure=reason=>redirect('/admin?auth='+reason,[cookie(request,'oauth','',0)]);
+ let flow='';
+ const failure=async reason=>{await authOutcome(env,flow,'error',reason);return redirect('/admin?auth='+reason,[cookie(request,'oauth','',0)]);};
  if(!state||!/^[\w-]{43}$/.test(state)||state!==readCookie(request,'oauth'))return failure('state');
- const pending=await env.DB.prepare('DELETE FROM admin_oauth_states WHERE hash=? AND created_at>? RETURNING verifier,return_to').bind(await hash(state),Date.now()-600000).first();
+ const pending=await env.DB.prepare('DELETE FROM admin_oauth_states WHERE hash=? AND created_at>? RETURNING verifier,return_to,analytics_flow').bind(await hash(state),Date.now()-600000).first();
+ flow=pending?.analytics_flow||'';
+ if(params.get('error')==='access_denied')return failure('denied');
  if(!pending||!code||code.length>512)return failure('state');
+ try{
  const response=await fetch('https://github.com/login/oauth/access_token',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json','User-Agent':'OpenAIGames-Review'},body:JSON.stringify({client_id:env.GITHUB_CLIENT_ID,client_secret:env.GITHUB_CLIENT_SECRET,code,redirect_uri:origin+'/api/auth/github/callback',code_verifier:pending.verifier}),signal:AbortSignal.timeout(10000),redirect:'manual'});
  if(!response.ok)return failure('github');
  const result=await response.json();if(!result.access_token)return failure('github');
@@ -65,7 +72,9 @@ export async function callback(request,env){
  if(!user||!Number.isSafeInteger(user.id))return failure('denied');
  const now=Date.now(),seconds=Math.max(60,Math.min(28800,Number(result.expires_in)||28800)-60),token=random();
  await env.DB.prepare('INSERT INTO admin_sessions(hash,github_id,login,token,csrf,expires_at,verified_at) VALUES(?,?,?,?,?,?,?)').bind(await hash(token),user.id,user.login,await encryptToken(result.access_token,env),random(),now+seconds*1000,now).run();
+ await authOutcome(env,flow,'success');
  const destination=safeReturn(pending.return_to);
  return redirect(destination==='/admin'&&!isAdministrator({github_id:user.id})?'/':destination,[cookie(request,'oauth','',0),cookie(request,'session',token,seconds)]);
+ }catch{return failure('github');}
 }
 export async function logout(request,env,session){await env.DB.prepare('DELETE FROM admin_sessions WHERE hash=?').bind(session.hash).run();return json({ok:true},200,{'Set-Cookie':cookie(request,'session','',0)});}

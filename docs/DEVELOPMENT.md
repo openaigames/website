@@ -16,7 +16,7 @@ The local configuration falls back to the included published catalog when no `CA
 
 ## Production and previews
 
-Latest deployment: [game selection and active-time analytics · 2026-09-18](RELEASE_2026-09-18_ATTENTION.md).
+Latest deployment: [journey analytics and optional game SDK · 2026-09-20](RELEASE_2026-09-20_JOURNEYS.md).
 
 Production and preview now run in the domain account (`1df8f334169206788cc480fb569f1761`). Use `npm run cf -- <wrangler arguments>` to select the isolated local credentials without changing other projects’ Wrangler login. The submissions maintainer commands select the same credentials automatically. On another computer, sign in to the domain account or supply its scoped Cloudflare API token. See [the migration record](CLOUDFLARE_MIGRATION.md).
 
@@ -29,7 +29,7 @@ The community's trusted default-branch workflow reads PR metadata as JSON, valid
 
 Catalog publication does not redeploy the website. GET `/api/catalog` uses `Cache-Control: no-store`; browser reads refresh after 30 seconds or a page reload. Main-branch publications use the production channel; PR publications use independent channels. Closed and merged PRs are labeled, and historical snapshots remain readable by revision. Preview feedback goes to GitHub and cannot be submitted to the production message board. First-party visitor, game-selection, game-open and active website time statistics are available to administrators at `/admin#analytics`; no GA4 or third-party analytics script is used. See [analytics definitions and privacy](ANALYTICS.md).
 
-Deploy code changes with `npm run build`, `npm test`, then `npm run cf -- deploy --config wrangler.cloudflare.json` (or `wrangler.preview.json`). Apply catalog migrations with `npm run cf -- d1 migrations apply CATALOG --remote --config wrangler.preview.json` when they change. Website-code PR deployments are not automated by the community data workflow.
+Deploy code changes with `npm run build`, `npm test`, then `npm run cf -- deploy --config wrangler.cloudflare.json` (or `wrangler.preview.json`). Back up the primary DB and apply new `drizzle/` migrations with `npm run cf -- d1 migrations apply DB --remote --config wrangler.cloudflare.json` before deploying code that reads new tables. Apply catalog migrations with `npm run cf -- d1 migrations apply CATALOG --remote --config wrangler.preview.json` when they change. Website-code PR deployments are not automated by the community data workflow.
 
 The previous Sites deployment remains available and continues to relay its board through the old gateway. That gateway verifies its existing relay signature and signs the request again for the new primary; visitor rate limits remain separate. Its source registration and source-repository history are not part of this checkout.
 

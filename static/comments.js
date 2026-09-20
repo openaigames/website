@@ -12,6 +12,7 @@
     try{const response=await fetch(endpoint(project.id,{view:'summary'}),{signal,cache:'no-store'});if(response.ok){data=(await response.json()).summary;if(!signal.aborted)render();}}catch{}
   }
   function mount(root,project,signal){
+    const telemetry=window.OpenAIGamesTelemetry,flow=telemetry?.savedFlow('feedback',project.id);
     const game=project.id,storageKey='oag-comment-draft:'+game;
     let entries=[],next=null,busy=false,sequence=0,draft='',requestId=crypto.randomUUID(),session=window.OpenAIGamesAccount?.session;
     let totals=null,viewer=null,reactionReady=false,readError=false,loading=false,reactionMessage='';
@@ -48,7 +49,9 @@
       $('.comments-list').innerHTML=entries.length?entries.map(entry=>`<article class="game-comment"><header><strong>@${esc(entry.login)}</strong><time datetime="${new Date(entry.created_at).toISOString()}">${esc(new Date(entry.created_at).toLocaleString(en()?'en-GB':'zh-CN',{dateStyle:'medium',timeStyle:'short'}))}</time>${session&&(session.user.id===entry.github_id||session.user.isAdmin)?`<button class="comment-delete" data-delete="${entry.id}" ${busy?'disabled':''}>${t('删除','Delete')}</button>`:''}</header><p>${esc(entry.body)}</p></article>`).join(''):`<p class="comments-empty">${totals?t('还没有评论，来聊第一句吧。','No comments yet. Start the conversation.'):t('正在读取评论…','Loading comments…')}</p>`;
     }
     async function api(options={},before){
-      const response=await fetch(endpoint(game,{...(before?{before}:{}),...(session?{mine:'1'}:{})}),{cache:'no-store',credentials:'same-origin',signal,...options});
+      let tracking={},attempt;
+      if(options.method==='POST'&&JSON.parse(options.body).action!=='delete'){const input=JSON.parse(options.body);const code=input.action==='rate'?(input.rating===null?'unrate':'rate'):input.action==='like'?(input.liked?'like':'unlike'):'comment';attempt=telemetry?.attempt(flow,code);tracking=await telemetry?.headers(attempt)||{};}
+      let response;try{response=await fetch(endpoint(game,{...(before?{before}:{}),...(session?{mine:'1'}:{})}),{cache:'no-store',credentials:'same-origin',signal,...options,headers:{...options.headers,...tracking}});}catch(error){telemetry?.step(attempt,'error',{code:telemetry.errorCode(error)});throw error;}
       const data=await response.json();
       if(!response.ok){const error=Error(en()?({401:'Sign in to continue.',403:'Please sign in again.',429:'Wait 10 seconds before posting again.',404:'This game or comment is no longer available.'}[response.status]||'Could not complete the request. Please try again.'):data.error||'请稍后重试。');error.status=response.status;throw error;}return data;
     }

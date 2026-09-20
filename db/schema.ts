@@ -46,6 +46,7 @@ export const adminOAuthStates = sqliteTable('admin_oauth_states', {
   hash: text('hash').primaryKey(),
   verifier: text('verifier').notNull(),
   returnTo: text('return_to').notNull().default('/admin'),
+  analyticsFlow: text('analytics_flow').notNull().default(''),
   ipKey: text('ip_key').notNull(),
   createdAt: integer('created_at').notNull(),
 }, t => [index('idx_oauth_ip_created').on(t.ipKey,t.createdAt)]);
@@ -107,3 +108,23 @@ export const analyticsLimits = sqliteTable('analytics_limits', {
   count: integer('count').notNull(),
   expiresAt: integer('expires_at').notNull(),
 }, t => [index('idx_analytics_limit_expiry').on(t.expiresAt)]);
+
+// One anonymous journey; steps are deduplicated per attempt, never joined to GitHub identities.
+export const analyticsSteps = sqliteTable('analytics_steps', {
+  id: text('id').primaryKey(),
+  visitor: text('visitor').notNull(),
+  visit: text('visit').notNull(),
+  flow: text('flow').notNull(),
+  parent: text('parent').notNull().default(''),
+  attempt: text('attempt').notNull(),
+  family: text('family').notNull(),
+  step: text('step').notNull(),
+  gameKey: text('game_key').notNull().default(''),
+  gameTitle: text('game_title').notNull().default(''),
+  device: text('device').notNull(),
+  host: text('host').notNull(),
+  durationMs: integer('duration_ms').notNull().default(0),
+  resultCount: integer('result_count').notNull().default(0),
+  code: text('code').notNull().default(''),
+  createdAt: integer('created_at').notNull(),
+}, t => [uniqueIndex('idx_analytics_step_attempt').on(t.flow,t.attempt,t.step), index('idx_analytics_steps_time').on(t.createdAt), index('idx_analytics_steps_visit').on(t.visit), index('idx_analytics_steps_parent').on(t.parent,t.step)]);

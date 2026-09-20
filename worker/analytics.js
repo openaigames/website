@@ -1,3 +1,4 @@
+import {validStep,recordStep,flowReport} from './analytics-flows.js';
 import {json,readBody} from './board-http.js';
 import {hash} from './admin-auth.js';
 import {catalog} from './catalog.js';
@@ -31,11 +32,13 @@ export async function collectAnalytics(request,env){
  const raw=await readBody(request);if(raw instanceof Response)return raw;
  let input;try{input=JSON.parse(raw);}catch{return respond({error:'Invalid event'},400);}
  const uuid=value=>typeof value==='string'&&UUID.test(value);
- if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!['id','visitor','kind','game','source','device','version','visit','activeMs'].includes(k))||!uuid(input.id)||!uuid(input.visitor)||!['pageview','play','select','engagement'].includes(input.kind)||!sources.includes(input.source)||!['mobile','desktop'].includes(input.device))return respond({error:'Invalid event'},400);
- const gameEvent=['play','select'].includes(input.kind),heartbeat=input.kind==='engagement';
- if((gameEvent?typeof input.game!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(input.game):input.game!==undefined)||(input.version!==undefined&&(input.kind!=='pageview'||input.version!==2))||(heartbeat?!uuid(input.visit)||!Number.isSafeInteger(input.activeMs)||input.activeMs<0||input.activeMs>DAY:input.visit!==undefined||input.activeMs!==undefined))return respond({error:'Invalid event'},400);
+ if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!['id','visitor','kind','game','source','device','version','visit','activeMs','flow','attempt','parent','family','step','durationMs','resultCount','code'].includes(k))||!uuid(input.id)||!uuid(input.visitor)||!['pageview','play','select','engagement','step'].includes(input.kind)||!sources.includes(input.source)||!['mobile','desktop'].includes(input.device))return respond({error:'Invalid event'},400);
+ const stepEvent=input.kind==='step',gameEvent=['play','select'].includes(input.kind)||(stepEvent&&!!input.game),heartbeat=input.kind==='engagement';
+ if(stepEvent&&!validStep(input))return respond({error:'Invalid step'},400);
+ if(!stepEvent&&['flow','attempt','parent','family','step','durationMs','resultCount','code'].some(k=>input[k]!==undefined))return respond({error:'Invalid event'},400);
+ if((gameEvent?typeof input.game!=='string'||!/^[a-zA-Z0-9_-]{1,100}$/.test(input.game):input.game!==undefined)||(input.version!==undefined&&(input.kind!=='pageview'||input.version!==2))||(heartbeat?!uuid(input.visit)||!Number.isSafeInteger(input.activeMs)||input.activeMs<0||input.activeMs>DAY:(!stepEvent&&input.visit!==undefined)||input.activeMs!==undefined))return respond({error:'Invalid event'},400);
  const now=Date.now(),host=new URL(origin).hostname,visitor=await hash('analytics:visitor:'+env.ADMIN_SESSION_SECRET+':'+input.visitor);
- if(!heartbeat&&await env.DB.prepare('SELECT id FROM analytics_events WHERE id=? AND visitor=?').bind(input.id,visitor).first())return empty(origin);
+ if(!heartbeat&&!stepEvent&&await env.DB.prepare('SELECT id FROM analytics_events WHERE id=? AND visitor=?').bind(input.id,visitor).first())return empty(origin);
  // Bounded per-minute address quota limits clients that keep changing visitor IDs.
  const address=await hash(`analytics:limit:${env.ADMIN_SESSION_SECRET}:${Math.floor(now/60000)}:${request.headers.get('CF-Connecting-IP')||'local'}`);
  const quota=await env.DB.prepare('INSERT INTO analytics_limits(key,count,expires_at) VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET count=count+1 WHERE count<120 RETURNING count').bind(address,now+120000).first();
@@ -54,6 +57,7 @@ export async function collectAnalytics(request,env){
   if(!game)return respond({error:'Game is not published'},404);
   gameKey=await hash(game.url);gameTitle=game.title;
  }
+ if(stepEvent){const status=await recordStep(env,input,visitor,host,gameEvent?{key:gameKey,title:gameTitle}:null);return status===204?empty(origin):respond({error:'Invalid journey'},status);}
  const writes=[
   env.DB.prepare('INSERT OR IGNORE INTO analytics_events(id,visitor,kind,game_key,game_title,source,device,host,created_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(input.id,visitor,input.kind,gameKey,gameTitle,input.source,input.device,host,now),
   env.DB.prepare("INSERT OR IGNORE INTO analytics_meta(key,value) VALUES('started_at',?)").bind(now)
@@ -92,11 +96,12 @@ export async function analyticsReport(request,env){
  const results=await db.batch(queries),rows=i=>results[i].results;
  const byDay=new Map(rows(1).map(r=>[r.day,r]));
  const daily=[];for(let time=start;time<end;time+=DAY){const key=day(time);daily.push(byDay.get(key)||{day:key,pageviews:0,visitors:0,plays:0});}
- return json({range:{from:range.from,to:range.to,timeZone:'Asia/Shanghai'},startedAt:rows(10)[0]?.value??null,engagementStartedAt:rows(12)[0]?.value??null,attention:rows(11)[0],summary:rows(0)[0],daily,games:rows(2),sources:rows(3),devices:rows(4),hosts:rows(5),engagement:{submissions:rows(6)[0].count,comments:rows(7)[0].count,notes:rows(8)[0].count,currentRatings:rows(9)[0].ratings,currentLikes:rows(9)[0].likes}});
+ const flows=await flowReport(db,start,end);
+ return json({flows,range:{from:range.from,to:range.to,timeZone:'Asia/Shanghai'},startedAt:rows(10)[0]?.value??null,engagementStartedAt:rows(12)[0]?.value??null,attention:rows(11)[0],summary:rows(0)[0],daily,games:rows(2),sources:rows(3),devices:rows(4),hosts:rows(5),engagement:{submissions:rows(6)[0].count,comments:rows(7)[0].count,notes:rows(8)[0].count,currentRatings:rows(9)[0].ratings,currentLikes:rows(9)[0].likes}});
 }
 export async function cleanupAnalytics(env,now=Date.now()){
  if(!env.DB||env.ANALYTICS_ENABLED!=='1')return;
  // Keep complete Shanghai calendar days for the available 90-day report window.
  const oldest=Date.parse(day(now-89*DAY)+'T00:00:00Z')-OFFSET;
- await env.DB.batch([env.DB.prepare('DELETE FROM analytics_events WHERE created_at<?').bind(oldest),env.DB.prepare('DELETE FROM analytics_visits WHERE created_at<?').bind(oldest),env.DB.prepare('DELETE FROM analytics_limits WHERE expires_at<?').bind(now)]);
+ await env.DB.batch([env.DB.prepare('DELETE FROM analytics_steps WHERE created_at<?').bind(oldest),env.DB.prepare('DELETE FROM analytics_events WHERE created_at<?').bind(oldest),env.DB.prepare('DELETE FROM analytics_visits WHERE created_at<?').bind(oldest),env.DB.prepare('DELETE FROM analytics_limits WHERE expires_at<?').bind(now)]);
 }

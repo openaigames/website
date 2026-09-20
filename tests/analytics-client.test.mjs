@@ -8,7 +8,7 @@ function fixture({store=new Map(),search='',host='openaigames.org',privacy=false
  const listeners={},calls=[],timeouts=[],intervals=[];let time=0;
  const window={};window.top=window;window.self=window;window.addEventListener=(name,fn)=>{listeners[name]=fn;};
  const document={visibilityState:visible?'visible':'hidden',referrer:'',focused:true,activeElement:null,hasFocus(){return this.focused;},addEventListener:(name,fn)=>{listeners[name]=fn;}};
- const context={window,document,navigator:{doNotTrack:privacy?'1':'0'},location:{hostname:host,pathname:'/',search},localStorage:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)},crypto,URL,URLSearchParams,performance:{now:()=>time},matchMedia:()=>({matches:false}),fetch:(url,options)=>{calls.push({url,event:JSON.parse(options.body)});return fail?Promise.reject(Error('offline')):Promise.resolve({status:204});},setTimeout:fn=>timeouts.push(fn),setInterval:(fn,ms)=>intervals.push({fn,ms})};
+ const context={window,document,navigator:{doNotTrack:privacy?'1':'0'},location:{hostname:host,pathname:'/',search},localStorage:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)},crypto,URL,URLSearchParams,performance:{now:()=>time},matchMedia:()=>({matches:false}),fetch:(url,options)=>{calls.push({url,event:JSON.parse(options.body)});return fail?Promise.reject(Error('offline')):Promise.resolve({status:204});},setTimeout:(fn,ms)=>timeouts.push({fn,ms}),setInterval:(fn,ms)=>intervals.push({fn,ms})};
  vm.runInNewContext(script,context);
  return {listeners,calls,document,store,timeouts,window,advance(ms,{sample=true}={}){time+=ms;if(sample)intervals.find(i=>i.ms===5000)?.fn();},flush(){intervals.find(i=>i.ms===30000)?.fn();},heartbeats:()=>calls.filter(c=>c.event.kind==='engagement').map(c=>c.event)};
 }
@@ -23,7 +23,7 @@ test('Hidden pages wait for visibility; opt-outs and previews do not collect; re
  const f=fixture({visible:false});assert.equal(f.calls.length,0);f.document.visibilityState='visible';f.listeners.visibilitychange();assert.equal(f.calls.length,1);
  for(const config of [{privacy:true},{host:'preview.openaigames.org'},{search:'?analytics=off'}])assert.equal(fixture(config).calls.length,0);
  const old=fixture({host:'openaigames.lens-frontier.workers.dev'});assert.equal(old.calls[0].url,'https://openaigames.org/api/analytics/event');
- const offline=fixture({fail:true});await settled();offline.timeouts[0]();assert.equal(offline.calls.length,2);assert.equal(offline.calls[0].event.id,offline.calls[1].event.id);
+ const offline=fixture({fail:true});await settled();offline.timeouts.find(t=>t.ms===1500).fn();assert.equal(offline.calls.length,2);assert.equal(offline.calls[0].event.id,offline.calls[1].event.id);
  await settled();offline.advance(5000);offline.flush();assert.equal(offline.heartbeats().length,0);
 });
 test('Active time excludes background, iframe focus, idle intervals and suspended device gaps',async()=>{
@@ -45,4 +45,17 @@ test('Exit flushes once, BFCache resumes the same visit and network retries do n
  f.advance(60000);f.listeners.pageshow();f.advance(5000);f.flush();await settled();assert.equal(f.heartbeats().at(-1).activeMs,10000);
  f.flush();assert.equal(f.heartbeats().length,2);assert.equal(f.calls.filter(c=>c.event.kind==='pageview').length,1);
  const race=fixture();race.advance(5000);race.listeners.pagehide();assert.equal(race.heartbeats().length,0);await settled();assert.equal(race.heartbeats().length,1);assert.equal(race.heartbeats()[0].activeMs,5000);
+});
+test('Form stages deduplicate per journey, actual attempts stay distinct, and no form text is sent',async()=>{
+ const f=fixture();await settled();const telemetry=f.window.OpenAIGamesTelemetry;
+ const form=telemetry.savedFlow('submission');assert.equal(telemetry.savedFlow('submission').flow,form.flow);
+ telemetry.step(form,'input');telemetry.step(form,'input');telemetry.step(form,'input');
+ const a=telemetry.attempt(form),b=telemetry.attempt(form);await telemetry.drain();
+ const steps=f.calls.filter(c=>c.event.family==='submission').map(c=>c.event);assert.equal(steps.filter(e=>e.step==='open').length,1);assert.equal(steps.filter(e=>e.step==='input').length,1);assert.equal(steps.filter(e=>e.step==='attempt').length,2);assert.notEqual(a.attempt,b.attempt);
+ const context=JSON.parse((await telemetry.headers(a))['X-OAG-Telemetry']);assert.equal(context.visit,f.calls[0].event.id);assert.equal(context.flow,form.flow);assert.deepEqual(Object.keys(context).sort(),['attempt','flow','visit','visitor']);
+});
+test('Room ready and errors retain one flow, while hidden document start waits for a valid visit',async()=>{
+ const f=fixture({visible:false});f.listeners['openaigames-room-ready']();f.document.visibilityState='visible';f.listeners.visibilitychange();await settled();await f.window.OpenAIGamesTelemetry.drain();
+ const room=f.calls.filter(c=>c.event.family==='room').map(c=>c.event);assert.deepEqual(room.map(r=>r.step),['open','ready']);assert.ok(room.every(r=>r.visit===f.calls[0].event.id));
+ f.listeners['openaigames-room-ready']();await f.window.OpenAIGamesTelemetry.drain();assert.equal(f.calls.filter(c=>c.event.family==='room').length,2);
 });

@@ -56,6 +56,7 @@ Built with **Three.js · Cloudflare Workers · D1**. See [development documentat
 | [Development and deployment](docs/DEVELOPMENT.md) | Local setup, releases, catalog publishing, and i18n |
 | [Room interactions](docs/ROOM.md) | Camera, touch controls, fullscreen play, feedback, and music |
 | [Sign-in and moderation](docs/AUTH_AND_MODERATION.md) | GitHub authentication, submission review, and authorization |
+| [Game runtime SDK](docs/GAME_TELEMETRY.md) | Optional author integration for readiness, rounds and active time |
 | [Analytics](docs/ANALYTICS.md) | Page views, estimated visitors, game opens, and metric definitions |
 
 Administrators use the [review desk](https://openaigames.org/admin) to moderate submissions and view analytics. Admin source code is included here; access is enforced by the server. Secrets, sessions, and user data are never published with the source.

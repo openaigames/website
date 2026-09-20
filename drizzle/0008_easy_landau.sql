@@ -1,0 +1,1 @@
+CREATE INDEX `idx_analytics_steps_parent` ON `analytics_steps` (`parent`,`step`);
