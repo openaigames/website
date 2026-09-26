@@ -11,3 +11,8 @@ export function creationDetails(project) {
 export function creationOptions(value='undeclared', locale='zh') {
   return Object.keys(creationMethods).map(key => `<option value="${key}" ${key===value?'selected':''}>${creationLabel(key,locale)}</option>`).join('');
 }
+
+export function creationStamp(project) {
+  const method = Object.hasOwn(creationMethods, project.creation_method) ? project.creation_method : 'undeclared';
+  return `<span class="cartridge-method" data-creation-method="${method}" title="${creationDisclosure}">${creationLabel(method)}</span>`;
+}

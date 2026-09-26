@@ -1,5 +1,5 @@
 /* Published community games and the shared player board. */
-import {creationBadge, creationDetails} from '../ui/creation.mjs';
+import {creationBadge, creationDetails, creationStamp} from '../ui/creation.mjs';
 (() => {
   'use strict';
   const community = 'https://github.com/openaigames/community';
@@ -38,7 +38,7 @@ import {creationBadge, creationDetails} from '../ui/creation.mjs';
   const stage = project => project.development_stage || project.version_label || '试玩版';
   const badges = project => `<div class="game-stage">${project.featured?'<span class="is-featured">精选</span>':''}<span>${project.pending?'待补资料':'已收录'}</span><span>${esc(stage(project))}</span>${creationBadge(project)}</div>`;
   function cover(project, large = false) {
-    return `<div class="site-cartridge ${large ? 'large' : ''}" style="--case:#b3ac8d"><div class="cartridge-ridges" aria-hidden="true"></div><div class="cartridge-label"><span class="cartridge-imprint">OpenAIGames <i>COMMUNITY EDITION</i></span>${project.cover_url?`<img class="cartridge-image submitted-art" src="${esc(project.cover_url)}" alt="${esc(project.title)} 卡带封面">`:`<div class="title-card-placeholder"><small>COMMUNITY PLAYTEST</small><b>${esc(project.title)}</b></div>`}<span class="cartridge-caption">${esc(project.title)}</span></div><span class="cartridge-notch" aria-hidden="true"></span></div>`;
+    return `<div class="site-cartridge ${large ? 'large' : ''}" style="--case:#b3ac8d"><div class="cartridge-ridges" aria-hidden="true"></div><div class="cartridge-label"><span class="cartridge-imprint">OpenAIGames <i>COMMUNITY EDITION</i></span>${project.cover_url?`<img class="cartridge-image submitted-art" src="${esc(project.cover_url)}" alt="${esc(project.title)} 卡带封面">`:`<div class="title-card-placeholder"><small>COMMUNITY PLAYTEST</small><b>${esc(project.title)}</b></div>`}<span class="cartridge-caption">${esc(project.title)}</span></div>${creationStamp(project)}<span class="cartridge-notch" aria-hidden="true"></span></div>`;
   }
   function setOpen(open) {
     view.hidden = !open; document.body.classList.toggle('site-open', open); intro.hidden = true;

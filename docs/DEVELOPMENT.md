@@ -16,7 +16,7 @@ The local configuration falls back to the included published catalog when no `CA
 
 ## Production and previews
 
-Latest deployment: [journey analytics and optional game SDK · 2026-09-20](RELEASE_2026-09-20_JOURNEYS.md).
+Latest deployment: [creation declarations and maintainer-confirmed labels · 2026-09-26](RELEASE_2026-09-26_CREATION.md).
 
 Production and preview now run in the domain account (`1df8f334169206788cc480fb569f1761`). Use `npm run cf -- <wrangler arguments>` to select the isolated local credentials without changing other projects’ Wrangler login. The submissions maintainer commands select the same credentials automatically. On another computer, sign in to the domain account or supply its scoped Cloudflare API token. See [the migration record](CLOUDFLARE_MIGRATION.md).
 

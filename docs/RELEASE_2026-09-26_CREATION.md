@@ -9,3 +9,9 @@ Migration `0009_old_quicksilver.sql` adds columns only. Historical submissions r
 The community validator, game template, bilingual submission guides and Agent Skill use the same contract. The catalog migration and PR preview workflow are unchanged. Older clients remain compatible: missing submission fields default to undeclared, and moderation requests that omit them preserve stored values. Rollback to the prior application is compatible with the additive columns but will hide the new labels.
 
 Validation: 85 automated tests pass, including default/backfill preservation, public/private intake, invalid declarations, escaped public notes, idempotency, approval preservation, authenticated corrections, audit history and concurrent-edit conflicts. Isolated browser QA exercised approval followed by a metadata-only correction and confirmed public detail updates. Chinese/English form drafts survived language switching. Desktop layout was inspected. No synthetic reviews or submissions were written to production.
+
+## Maintainer-confirmed declarations
+
+After launch, the maintainer explicitly confirmed Masking as human-made and the other seven currently public games as primarily AI-generated. The six approved quick-submission records were updated with a review-version guard and before/after audit rows attributed to the authenticated maintainer (`mattheliu`, GitHub ID 102272920), using the authorized Cloudflare maintenance connection. Approval and gameplay metadata are unchanged. Dodo and NIGHTFURY declarations are recorded in the community catalog source and the local fallback catalog. New submissions still default to undeclared.
+
+Cartridge artwork now has a dedicated creation-method strip; physical 3D cartridges use a larger separate plaque and include declaration changes in the rack refresh key. The review list and detail heading show matching textual labels and colors.
