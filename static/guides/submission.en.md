@@ -36,3 +36,16 @@ The website embeds your playable URL; it does not build your game source. To tes
 Read the [game submission skill](https://github.com/openaigames/community/blob/main/skills/openaigames-submit-demo/SKILL.md). It can be installed in an agent's skill directory if the agent supports `SKILL.md`. It needs neither Cloudflare access nor website deployment credentials.
 
 Implementation and workflows live in `tooling/catalog/` and `.github/workflows/catalog.yml`. Previews do not accept public board posts or load production analytics. If catalog publication fails, the previous published catalog remains live.
+
+## Creation declarations
+
+The web submission form and `game.json` share these fields:
+
+| Field | Rule |
+| --- | --- |
+| `creation_method` | `undeclared` (default), `human`, `ai_assisted`, or `ai_generated` |
+| `creation_note` | Optional public explanation, up to 500 characters, covering code, art, audio, writing or tools |
+
+`human` declares that no generative AI was used; conventional engines and development tools are allowed. Use `ai_assisted` for generative AI assistance with code or assets, and `ai_generated` when generative AI produced most of the code or content. If you recommend someone else's work without knowing its process, keep `undeclared`. Never infer a declaration from appearance, hosting provider, source availability or approval. Creator submissions do not imply human-made production.
+
+Labels appear in the catalog, details and player. They reflect declarations and supporting material, not platform certification. Older games remain Not declared until information is supplied; approval never changes the method automatically. Moderators may correct approved submissions with a review reason and an audit of previous and new values. Creation notes are public: exclude contact details, private URLs and credentials. PR records are authoritative for the published catalog; carry confirmed declarations over when promoting a quick submission.

@@ -1,3 +1,4 @@
+import {creationLabel} from '../lib/creation.mjs';
 import * as T from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
@@ -56,7 +57,7 @@ function sceneCard(card,p){
  card.getObjectByName('cart_art').material=material;
  if(p.cover_url)texLoader.load(p.cover_url,texture=>{if(!rackCards.includes(card)){texture.dispose();return;}texture.colorSpace=T.SRGBColorSpace;texture.anisotropy=8;material.map.dispose();material.map=texture;material.needsUpdate=true;dirty=true;},undefined,()=>{});
  applyLabel(card,'cart_title',p.title,{w:768,h:96,bg:'#193968',fg:'#d2e9ff',size:54});
- const status=[p.featured?'精选':p.pending?'待补资料':'已收录',p.development_stage||p.version_label||'试玩版'].map(text=>window.OpenAIGamesI18n?.t(text)||text).join(' · ');
+ const status=[p.featured?'精选':p.pending?'待补资料':'已收录',creationLabel(p.creation_method)].map(text=>window.OpenAIGamesI18n?.t(text)||text).join(' · ');
  const statusLabel=new T.Mesh(new T.PlaneGeometry(1.27,.16),new T.MeshBasicMaterial({map:textTexture(status,1024,128,p.featured?'#f58a3b':'#173967',p.featured?'#152747':'#d8e8ff',68)}));statusLabel.name='cart_status';statusLabel.position.set(0,.245,.168);statusLabel.userData.card=p.id;card.add(statusLabel);
 
  const i=[...p.id].reduce((sum,c)=>sum+c.charCodeAt(0),0)%6;

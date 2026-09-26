@@ -25,6 +25,7 @@ test('Metadata is normalized and unsafe or duplicate game records are rejected',
   const seed=JSON.parse(await readFile('content/catalog.json','utf8'));
   const p=seed.projects[0];
   assert.equal(normalizeCatalog(seed).projects[0].id,'dodo');
+  assert.equal(normalizeCatalog(seed).projects[0].creation_method,'undeclared');
   assert.equal(normalizeCatalog({projects:[{...p,featured:undefined}]}).projects[0].featured,false);
   assert.throws(()=>normalizeCatalog({projects:[{...p,featured:'yes'}]}));
   for(const preview_url of ['javascript:alert(1)','https://localhost/','https://127.0.0.1/','https://openaigames.lens-frontier.workers.dev/']) assert.throws(()=>normalizeCatalog({projects:[{...p,preview_url}]}));

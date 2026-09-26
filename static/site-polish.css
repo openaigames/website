@@ -288,3 +288,14 @@ body>.room{display:none!important}
 @media(max-width:600px){.room-entry-guide{font-size:11px;bottom:max(22px,env(safe-area-inset-bottom))}}
 @keyframes room-entry-fade{0%,75%{opacity:1}100%{opacity:0;visibility:hidden}}
 @media(prefers-reduced-motion:reduce){.room-entry-guide{animation:none;transition:none}}
+
+/* Creation declarations remain distinct from review and featured badges. */
+.creation-badge{display:inline-flex;align-items:center;gap:0;max-width:100%;padding:4px 7px;border:1px solid #94adc9;border-radius:3px;background:#e9eff5;color:#274868;font:500 11px/1.5 "Avenir Next","PingFang SC",sans-serif;white-space:normal}
+.game-stage .creation-badge{background:#e9eff5;border-color:#94adc9;color:#274868}
+.game-stage .creation-badge>span,.creation-badge>span{padding:0;border:0;background:transparent;color:inherit;font:inherit}
+.creation-badge[data-creation-method="undeclared"]{color:#5d6879;background:#eef1f5;border-color:#bec8d5}
+.creation-details .creation-note{white-space:pre-wrap;overflow-wrap:anywhere}
+.creation-help{font-size:13px;line-height:1.7;color:#50617a;margin:-10px 0 20px}
+.screen-creation{text-align:center;margin:5px 0}
+.game-toolbar>.creation-badge{flex-shrink:1;font-size:10px;line-height:1.35}
+@media(max-width:520px){.game-toolbar>.creation-badge{max-width:145px}.submission-creation label span{display:block}}

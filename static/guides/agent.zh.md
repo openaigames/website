@@ -11,6 +11,7 @@ description: 向 OpenAIGames 社区仓库提交或更新可试玩游戏，验证
 
 - 检查已有的 `demos/` 记录和未关闭的 PR，沿用游戏的稳定 ID，避免重复投稿。
 - 添加或更新 `demos/<id>/game.json`、`README.md` 以及同目录的封面图。从用户的游戏和已发布文档中整理资料。保留作者和第三方署名，区分概念艺术与实际游戏截图。
+- 保留 `creation_method`（`undeclared`、`human`、`ai_assisted`、`ai_generated`）和可选的公开 `creation_note`（最多 500 字）。只依据作者明确声明或提供的材料填写；缺少依据时使用 `undeclared`。人工制作表示未使用生成式 AI，作者自荐或审核通过不能作为依据。不要根据画风、托管平台或代码推断。快捷投稿转为正式档案时，保留已确认的声明。
 - 默认设置 `featured: false`。新投稿合并后进入完整目录，首页精选由维护者决定。普通投稿不要修改 `catalog/legacy.json`。
 - 使用可正常访问的 HTTPS 试玩地址。游戏代码有改动时，先在游戏自身的仓库中部署。不要暗示社区 PR 会构建游戏本体。
 - `submission_url` 可以指向社区归档文档，不要编造尚未创建的 PR 编号。不要包含令牌、私有地址、未发布草稿或玩家数据。

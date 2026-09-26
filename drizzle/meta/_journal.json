@@ -64,6 +64,13 @@
       "when": 1789872132460,
       "tag": "0008_easy_landau",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790405512296,
+      "tag": "0009_old_quicksilver",
+      "breakpoints": true
     }
   ]
 }

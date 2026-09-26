@@ -59,3 +59,11 @@ These commands use existing Wrangler authorization. Review status changes belong
 `content/game-locales.json` stores reviewed display translations for the seven currently curated games, keyed by playable URL. Each entry pairs original `zh` text with `en` values for names, descriptions, instructions, credits and captions. Add matching fields in both languages when curating another game. These display translations do not overwrite catalog or submission records. Nicknames, player notes and unrecognized user content retain their original text. Covers and embedded games retain their own artwork and supported languages.
 
 Full on-site guides are paired as `static/guides/<guide>.zh.md` and `<guide>.en.md`; maintain both when the submission workflow changes. Run `npm test` and check the room, catalog, game details, forms and guides in both languages after editing translations.
+
+## Creation method metadata
+
+`lib/creation.mjs` validates optional `creation_method` and `creation_note` for web intake and formal catalog records. Methods are `undeclared` (default), `human`, `ai_assisted`, `ai_generated`; notes are public and limited to 500 characters. Keep this module mirrored in community `tooling/catalog/creation.mjs`, alongside `schema.mjs`, and maintain both guide languages and the submission Skill. Do not infer methods for historical games.
+
+Migration `0009_old_quicksilver.sql` is additive: historical submissions default to undeclared; historical audit rows retain null declaration snapshots. Back up the primary DB, apply the migration, then deploy production and preview code. Old clients may omit the fields: submissions default to undeclared, while moderation preserves the stored values. No catalog database migration is needed; historical catalog snapshots normalize missing fields on read.
+
+The review API accepts `action: "update_creation"` with the current status and review version to update metadata without changing approval. Changing method or public notes requires a nonempty private review note. Both review transitions and metadata-only edits atomically record before/after values and increment `review_version`. Same-version races return 409. Only the existing immutable administrator identity may write. Formal catalog entries continue to be maintained through PRs.

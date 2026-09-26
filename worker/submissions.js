@@ -1,8 +1,9 @@
+import { normalizeCreation } from '../lib/creation.mjs';
 import { json, readBody } from './board-http.js';
 import { clientKey } from './board-relay.js';
 
-const columns = 'id, title, url, description, submitter, relation, created_at';
-const same = (row, data) => ['title','url','description','submitter','relation'].every(key => row[key] === data[key]);
+const columns = 'id, title, url, description, submitter, relation, creation_method, creation_note, created_at';
+const same = (row, data) => ['title','url','description','submitter','relation','creation_method','creation_note'].every(key => row[key] === data[key]);
 export function normalizeSubmission(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw Error('请使用投稿表单。');
   const result = {};
@@ -17,7 +18,7 @@ export function normalizeSubmission(input) {
   result.url = url.href;
   if (!['creator','recommend'].includes(input.relation)) throw Error('请选择自己的作品或推荐的作品。');
   result.relation = input.relation;
-  return result;
+  return {...result,...normalizeCreation(input)};
 }
 
 export async function submissions(request, env, ctx) {
@@ -54,7 +55,7 @@ export async function submissions(request, env, ctx) {
   const now = Date.now(), key = await clientKey(request, env, now);
   if (!key) return json({error:'投稿连接校验失败，请刷新重试。'},403);
   await db.batch([
-    db.prepare(`INSERT OR IGNORE INTO game_submissions (request_id,title,url,description,submitter,relation,created_at) SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM submission_limits WHERE key = ? AND next_at > ?)`).bind(requestId,data.title,data.url,data.description,data.submitter,data.relation,now,key,now),
+    db.prepare(`INSERT OR IGNORE INTO game_submissions (request_id,title,url,description,submitter,relation,creation_method,creation_note,created_at) SELECT ?,?,?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM submission_limits WHERE key = ? AND next_at > ?)`).bind(requestId,data.title,data.url,data.description,data.submitter,data.relation,data.creation_method,data.creation_note,now,key,now),
     db.prepare(`INSERT INTO submission_limits (key,next_at) SELECT ?,? WHERE EXISTS (SELECT 1 FROM game_submissions WHERE request_id = ? AND created_at = ?) ON CONFLICT(key) DO UPDATE SET next_at=excluded.next_at`).bind(key,now+30000,requestId,now)
   ]);
   const entry = await db.prepare(`SELECT ${columns} FROM game_submissions WHERE request_id = ?`).bind(requestId).first();

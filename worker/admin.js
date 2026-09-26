@@ -1,7 +1,8 @@
+import {normalizeCreation} from '../lib/creation.mjs';
 import {json,readBody} from './board-http.js';
 import {adminIdentity,isAdministrator,login,callback,logout} from './admin-auth.js';
 import {analyticsReport} from './analytics.js';
-const fields='id,title,url,description,submitter,relation,status,created_at,review_version,reviewed_at,reviewed_by,review_note';
+const fields='id,title,url,description,submitter,relation,creation_method,creation_note,status,created_at,review_version,reviewed_at,reviewed_by,review_note';
 const transitions={pending:['approved','rejected'],approved:['archived'],rejected:['pending'],archived:['pending','approved']};
 export async function admin(request,env){
  const url=new URL(request.url),path=url.pathname;
@@ -29,18 +30,24 @@ export async function admin(request,env){
  const id=Number(match[1]),entry=await env.DB.prepare(`SELECT ${fields} FROM game_submissions WHERE id=?`).bind(id).first();
  if(!entry)return json({error:'投稿不存在。'},404);
  if(request.method==='GET'){
-  const reviews=(await env.DB.prepare('SELECT from_status,to_status,actor_login,note,created_at FROM submission_reviews WHERE submission_id=? ORDER BY created_at DESC,id DESC LIMIT 100').bind(id).all()).results;
+  const reviews=(await env.DB.prepare('SELECT from_status,to_status,from_creation_method,to_creation_method,from_creation_note,to_creation_note,actor_login,note,created_at FROM submission_reviews WHERE submission_id=? ORDER BY created_at DESC,id DESC LIMIT 100').bind(id).all()).results;
   return json({entry,reviews});
  }
  const raw=await readBody(request);if(raw instanceof Response)return raw;let input;try{input=JSON.parse(raw);}catch{return json({error:'操作格式无效。'},400);}
  if(!input||typeof input!=='object'||typeof input.note!=='string'||input.note.length>500||/[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(input.note)||!Number.isSafeInteger(input.version))return json({error:'请检查审核说明，最多 500 字。'},400);
  if(input.version!==entry.review_version)return json({error:'这条投稿已被处理，请刷新后再操作。'},409);
- if(!transitions[entry.status]?.includes(input.status))return json({error:'当前状态不支持这个操作。'},409);
+ let creation;try{creation=normalizeCreation({creation_method:input.creation_method===undefined?entry.creation_method:input.creation_method,creation_note:input.creation_note===undefined?entry.creation_note:input.creation_note});}catch(error){return json({error:error.message},400);}
+ const creationChanged=creation.creation_method!==entry.creation_method||creation.creation_note!==entry.creation_note;
+ const metadataOnly=input.action==='update_creation';
+ if(metadataOnly&&input.status!==entry.status)return json({error:'保存制作方式不能改变审核状态。'},400);
+ if(metadataOnly&&!creationChanged)return json({error:'制作方式和说明没有变化。'},400);
+ if(creationChanged&&!input.note.trim())return json({error:'更正制作方式时，请在审核说明中记录依据。'},400);
+ if(!metadataOnly&&!transitions[entry.status]?.includes(input.status))return json({error:'当前状态不支持这个操作。'},409);
  if(['rejected','archived'].includes(input.status)&&!input.note.trim())return json({error:'请填写驳回或下架原因。'},400);
  const now=Date.now(),note=input.note.trim();
  const result=await env.DB.batch([
-  env.DB.prepare('INSERT INTO submission_reviews(id,submission_id,from_status,to_status,actor_id,actor_login,note,created_at) SELECT ?,id,status,?,?,?,?,? FROM game_submissions WHERE id=? AND review_version=?').bind(crypto.randomUUID(),input.status,identity.github_id,identity.login,note,now,id,input.version),
-  env.DB.prepare('UPDATE game_submissions SET status=?,review_version=review_version+1,reviewed_at=?,reviewed_by=?,review_note=? WHERE id=? AND review_version=?').bind(input.status,now,identity.login,note,id,input.version)
+  env.DB.prepare('INSERT INTO submission_reviews(id,submission_id,from_status,to_status,from_creation_method,to_creation_method,from_creation_note,to_creation_note,actor_id,actor_login,note,created_at) SELECT ?,id,status,?,creation_method,?,creation_note,?,?,?,?,? FROM game_submissions WHERE id=? AND review_version=?').bind(crypto.randomUUID(),input.status,creation.creation_method,creation.creation_note,identity.github_id,identity.login,note,now,id,input.version),
+  env.DB.prepare('UPDATE game_submissions SET status=?,creation_method=?,creation_note=?,review_version=review_version+1,reviewed_at=?,reviewed_by=?,review_note=? WHERE id=? AND review_version=?').bind(input.status,creation.creation_method,creation.creation_note,now,identity.login,note,id,input.version)
  ]);
  if(result[1].meta.changes!==1)return json({error:'这条投稿已被处理，请刷新后再操作。'},409);
  return json({entry:await env.DB.prepare(`SELECT ${fields} FROM game_submissions WHERE id=?`).bind(id).first()});

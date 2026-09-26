@@ -18,7 +18,7 @@ export async function catalog(request, env) {
     return json({ error: '这个 PR 的预览还没准备好，请查看 PR 检查结果。' }, 404);
   }
   if (row.status === 'invalid') return json({ error: '这次提交的资料检查未通过，请查看 PR 评论。' }, 422);
-  return json({ ...JSON.parse(row.payload), release: { preview, pr: preview ? Number(pr) : null, revision: row.revision, status: row.status, updated_at: row.updated_at } });
+  return json({ ...normalizeCatalog(JSON.parse(row.payload)), release: { preview, pr: preview ? Number(pr) : null, revision: row.revision, status: row.status, updated_at: row.updated_at } });
 }
 
 export async function publishCatalog(request, env) {

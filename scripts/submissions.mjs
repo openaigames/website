@@ -24,10 +24,10 @@ if (command === 'import' && rest.length === 1) {
   const rows = JSON.parse(await readFile(rest[0],'utf8'));
   if (!Array.isArray(rows) || !rows.length || rows.length>100) throw Error('Expected 1–100 submissions');
   const now = Date.now();
-  const sql = rows.map(normalizeSubmission).map(row => `INSERT OR IGNORE INTO game_submissions(request_id,title,url,description,submitter,relation,created_at) VALUES (${[crypto.randomUUID(),row.title,row.url,row.description,row.submitter,row.relation,now].map(quote).join(',')});`).join('\n');
+  const sql = rows.map(normalizeSubmission).map(row => `INSERT OR IGNORE INTO game_submissions(request_id,title,url,description,submitter,relation,creation_method,creation_note,created_at) VALUES (${[crypto.randomUUID(),row.title,row.url,row.description,row.submitter,row.relation,row.creation_method,row.creation_note,now].map(quote).join(',')});`).join('\n');
   console.log(JSON.stringify(await run(sql),null,2));
 } else if (command === 'export' && rest.length === 1) {
-  const result = await run("SELECT id,title,url,description,submitter,relation,status,created_at FROM game_submissions ORDER BY id DESC;");
+  const result = await run("SELECT id,title,url,description,submitter,relation,creation_method,creation_note,status,created_at FROM game_submissions ORDER BY id DESC;");
   await writeFile(rest[0],JSON.stringify(result.flatMap(item=>item.results||[]),null,2)+'\n');
   console.log('Exported submissions to '+rest[0]);
 } else {
