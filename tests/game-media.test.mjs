@@ -7,7 +7,9 @@ test('local catalog retains the racing release and all captured game artwork res
  const racing=catalog.projects.find(p=>p.id==='nightfury-racing');
  assert.ok(racing?.current_version);assert.equal(racing.creator,'Ziang-Chen');assert.equal(racing.featured,true);
  const media=JSON.parse(await readFile(new URL('content/game-media.json',root)));
- assert.equal(Object.keys(media).length,5);
+ // A moved game keeps its old URL alias without adding another artwork set.
+ assert.equal(new Set(Object.values(media).map(item=>item.cover_url)).size,5);
+ assert.deepEqual(media['https://cockroach-battle.zackliny.chatgpt.site/'],media['https://dirty-room.zackliny.chatgpt.site/']);
  for(const [url,item] of Object.entries(media)){
   assert.equal(new URL(url).protocol,'https:');assert.ok(item.development_stage);
   for(const path of new Set([item.cover_url,item.gameplay_url])){

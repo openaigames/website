@@ -28,5 +28,11 @@
     "gameplay_url": "/static/games/community/iron-swarm-gameplay.jpg",
     "development_stage": "可试玩 Demo",
     "image_caption": "2026-09-15 游戏标题封面与灰线哨站战役实机截图。"
+  },
+  "https://cockroach-battle.zackliny.chatgpt.site/": {
+    "cover_url": "/static/games/community/dirty-room.jpg",
+    "gameplay_url": "/static/games/community/dirty-room-gameplay.jpg",
+    "development_stage": "可试玩 Demo",
+    "image_caption": "2026-09-15 实际打开游戏后截取的标题与试玩画面。"
   }
 }
